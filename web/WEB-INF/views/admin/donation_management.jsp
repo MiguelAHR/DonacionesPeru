@@ -90,8 +90,7 @@
                                                         <%= donation.getStatus()%>
                                                     </span>
                                                 </td>
-                                                <td><%= donation.getEmployeeAssigned() != null ? donation.getEmployeeAssigned() : "Sin asignar"%></td>
-                                                <td>
+                                                <td><%= donation.getEmployeeUsername() != null ? donation.getEmployeeUsername() : "Sin asignar"%></td>                                                <td>
                                                     <div class="btn-group">
                                                         <button class="btn btn-sm btn-outline-primary" 
                                                                 onclick="showEditModal(<%= donation.getId()%>, '<%= donation.getStatus()%>')">

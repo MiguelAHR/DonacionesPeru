@@ -10,12 +10,12 @@ public class StatisticsDAO {
     public Map<String, Integer> getDashboardStats() {
         Map<String, Integer> stats = new HashMap<>();
         String sql = "SELECT " +
-                    "(SELECT COUNT(*) FROM usuarios) as total_users, " +
-                    "(SELECT COUNT(*) FROM donadores) as total_donors, " +
-                    "(SELECT COUNT(*) FROM receptores) as total_receivers, " +
-                    "(SELECT COUNT(*) FROM donaciones) as total_donations, " +
-                    "(SELECT COUNT(*) FROM donaciones WHERE status = 'pending') as pending_donations, " +
-                    "(SELECT COUNT(*) FROM solicitudes WHERE status = 'pending') as pending_requests";
+                "(SELECT COUNT(*) FROM usuarios) as total_users, " +
+                "(SELECT COUNT(*) FROM donadores) as total_donors, " +
+                "(SELECT COUNT(*) FROM receptores) as total_receivers, " +
+                "(SELECT COUNT(*) FROM donaciones) as total_donations, " +
+                "(SELECT COUNT(*) FROM donaciones WHERE status = 'pending') as pending_donations, " +
+                "(SELECT COUNT(*) FROM solicitudes WHERE status = 'pending') as pending_requests";
         
         try (Connection conn = Conexion.getConnection();
              Statement stmt = conn.createStatement();

@@ -14,24 +14,26 @@ public class DonationManagementServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("username") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
-        
+
         String userType = (String) session.getAttribute("userType");
         if (!"admin".equals(userType) && !"empleado".equals(userType)) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
-        
+
         String action = request.getParameter("action");
-        if (action == null) action = "list";
-        
+        if (action == null) {
+            action = "list";
+        }
+
         DataManager dm = DataManager.getInstance();
-        
+
         switch (action) {
             case "edit":
                 String idStr = request.getParameter("id");
@@ -50,7 +52,7 @@ public class DonationManagementServlet extends HttpServlet {
                     }
                 }
                 break;
-                
+
             case "list":
             default:
                 request.setAttribute("donations", dm.getAllDonations());
@@ -58,28 +60,30 @@ public class DonationManagementServlet extends HttpServlet {
                 break;
         }
     }
-    
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("username") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
-        
+
         String userType = (String) session.getAttribute("userType");
         if (!"admin".equals(userType) && !"empleado".equals(userType)) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
-        
+
         String action = request.getParameter("action");
-        if (action == null) action = "update";
-        
+        if (action == null) {
+            action = "update";
+        }
+
         DataManager dm = DataManager.getInstance();
-        
+
         switch (action) {
             case "updateStatus":
                 updateDonationStatus(request, response, dm);
@@ -91,21 +95,21 @@ public class DonationManagementServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/donationManagement");
         }
     }
-    
+
     private void updateDonationStatus(HttpServletRequest request, HttpServletResponse response, DataManager dm)
             throws IOException {
-        
+
         try {
             int donationId = Integer.parseInt(request.getParameter("donationId"));
             String newStatus = request.getParameter("status");
             String employeeUsername = (String) request.getSession().getAttribute("username");
-            
+
             Donation donation = dm.getDonation(donationId);
             if (donation != null) {
                 donation.setStatus(newStatus);
-                donation.setEmployeeUsername(employeeUsername); // CORREGIDO: era setEmployeeAssigned
-                dm.updateDonation(donation); // CORREGIDO: llamar al método update
-                
+                donation.setEmployeeUsername(employeeUsername);
+                dm.updateDonation(donation);
+
                 response.sendRedirect(request.getContextPath() + "/donationManagement?success=status_updated");
             } else {
                 response.sendRedirect(request.getContextPath() + "/donationManagement?error=notfound");
@@ -114,19 +118,19 @@ public class DonationManagementServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/donationManagement?error=invalid");
         }
     }
-    
+
     private void assignEmployeeToDonation(HttpServletRequest request, HttpServletResponse response, DataManager dm)
             throws IOException {
-        
+
         try {
             int donationId = Integer.parseInt(request.getParameter("donationId"));
             String employeeUsername = request.getParameter("employeeUsername");
-            
+
             Donation donation = dm.getDonation(donationId);
             if (donation != null) {
                 donation.setEmployeeUsername(employeeUsername); // CORREGIDO: era setEmployeeAssigned
                 dm.updateDonation(donation); // CORREGIDO: llamar al método update
-                
+
                 response.sendRedirect(request.getContextPath() + "/donationManagement?success=employee_assigned");
             } else {
                 response.sendRedirect(request.getContextPath() + "/donationManagement?error=notfound");

@@ -235,7 +235,7 @@
                                         </span>
                                         <small class="text-muted">
                                             <i class="fas fa-calendar me-1"></i>
-                                            <%= new java.text.SimpleDateFormat("dd/MM/yyyy").format(donation.getDate()) %>
+                                            <%= new java.text.SimpleDateFormat("dd/MM/yyyy").format(donation.getCreatedDate()) %>
                                         </small>
                                     </div>
                                 </div>

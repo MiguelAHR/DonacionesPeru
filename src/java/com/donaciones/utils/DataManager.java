@@ -126,7 +126,6 @@ public class DataManager {
         user.setAddress(donor.getAddress());
         user.setNotificationsEnabled(donor.isNotificationsEnabled());
         
-        userDAO.addUser(user);
         donorDAO.addDonor(donor);
     }
 
@@ -151,7 +150,6 @@ public class DataManager {
         user.setAddress(receiver.getAddress());
         user.setNotificationsEnabled(receiver.isNotificationsEnabled());
         
-        userDAO.addUser(user);
         receiverDAO.addReceiver(receiver);
     }
     

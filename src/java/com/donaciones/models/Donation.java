@@ -37,6 +37,8 @@ public class Donation {
     private int rating;
     private String feedback;
     private List<String> tags; // Nuevo campo para etiquetas
+    private Date donationDate;
+    private String address;
 
     // Constructors
     public Donation() {
@@ -333,6 +335,23 @@ public class Donation {
 
     public void setTags(List<String> tags) {
         this.tags = tags != null ? tags : new ArrayList<>();
+    }
+    
+    // Getters y Setters
+    public Date getDonationDate() {
+        return donationDate;
+    }
+    
+    public void setDonationDate(Date donationDate) {
+        this.donationDate = donationDate;
+    }
+    
+    public String getAddress() {
+        return address;
+    }
+    
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     // Utility methods for images
