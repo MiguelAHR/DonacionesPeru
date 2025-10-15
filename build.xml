@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="SistemaDonacionesPeru" default="default" basedir=".">
+    <description>Sistema de Donaciones Peru - Java Web Application</description>
+    <import file="nbproject/build-impl.xml"/>
+</project>
