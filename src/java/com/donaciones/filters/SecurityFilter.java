@@ -67,61 +67,60 @@ public class SecurityFilter implements Filter {
     }
 
     private boolean hasAccess(String userType, String path, String queryString, String method) {
-        if (userType == null) {
-            return false;
-        }
-
-        // URLs que todos los usuarios autenticados pueden acceder
-        if (path.equals("/logout")
-                || path.equals("/dashboard")
-                || path.equals("/profile")) {
-            return true;
-        }
-
-        switch (userType.toLowerCase()) {
-            case "admin":
-                // Admin puede acceder a todo
-                return true;
-
-            case "empleado":
-                // Empleado puede acceder a gestion de donaciones, crear donadores/receptores
-                if (path.equals("/reports")
-                        || path.equals("/donations")
-                        || path.equals("/users")
-                        || path.startsWith("/empleado/")) {
-                    return true;
-                }
-                // No puede acceder a páginas de admin específicas
-                return !path.startsWith("/admin/")
-                        && !path.equals("/userManagement")
-                        && !path.equals("/donationManagement");
-
-            case "usuario":
-                // Usuario puede acceder a sus donaciones y solicitudes
-                if (path.equals("/donations")) {
-                    if ("GET".equals(method)
-                            && ("action=myDonations".equals(queryString)
-                            || "action=myRequests".equals(queryString)
-                            || "action=new".equals(queryString)
-                            || "action=newRequest".equals(queryString)
-                            || queryString == null
-                            || "action=list".equals(queryString))) {
-                        return true;
-                    }
-                    // Puede enviar el formulario de donación/solicitud
-                    if ("POST".equals(method)) {
-                        return true;
-                    }
-                }
-                // Puede acceder a su perfil
-                if (path.startsWith("/usuario/")) {
-                    return true;
-                }
-                return false;
-            default:
-                return false;
-        }
+    if (userType == null) {
+        return false;
     }
+
+    // URLs que todos los usuarios autenticados pueden acceder
+    if (path.equals("/logout")
+            || path.equals("/dashboard")
+            || path.equals("/profile")) {
+        return true;
+    }
+
+    switch (userType.toLowerCase()) {
+        case "admin":
+            return true;
+
+        case "empleado":
+            if (path.equals("/reports")
+                    || path.equals("/donations")
+                    || path.equals("/users")
+                    || path.startsWith("/empleado/")) {
+                return true;
+            }
+            return !path.startsWith("/admin/")
+                    && !path.equals("/userManagement")
+                    && !path.equals("/donationManagement");
+
+        case "usuario":
+            // Usuario puede acceder a sus donaciones y solicitudes - CORREGIDO
+            if (path.equals("/donations")) {
+                if ("GET".equals(method)) {
+                    // Permitir con cualquier parámetro de query string
+                    return queryString == null 
+                        || queryString.contains("action=myDonations")
+                        || queryString.contains("action=myRequests") 
+                        || queryString.contains("action=new")
+                        || queryString.contains("action=newRequest")
+                        || queryString.contains("action=list")
+                        || queryString.contains("success=")
+                        || queryString.contains("error=");
+                }
+                // Puede enviar el formulario de donación/solicitud
+                if ("POST".equals(method)) {
+                    return true;
+                }
+            }
+            // Puede acceder a su perfil
+            if (path.startsWith("/usuario/")) {
+                return true;
+            }
+            return false;
+        default:
+            return false;
+    }
+}
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {

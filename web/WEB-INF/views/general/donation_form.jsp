@@ -65,6 +65,16 @@
     </style>
 </head>
 <body class="bg-light">
+    <!-- Mostrar mensajes de error en el formulario -->
+    <% if (request.getAttribute("errorMessage") != null) { %>
+        <div class="container mt-3">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <%= request.getAttribute("errorMessage") %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    <% } %>
     <!-- Form Header -->
     <div class="form-header">
         <div class="container text-center">

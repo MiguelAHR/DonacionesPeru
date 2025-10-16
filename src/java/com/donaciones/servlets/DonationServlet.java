@@ -31,8 +31,8 @@ public class DonationServlet extends HttpServlet {
         }
 
         if ("usuario".equals(userType)) {
-            if (!"list".equals(action) && !"new".equals(action) && !"newRequest".equals(action) 
-                && !"myDonations".equals(action) && !"myRequests".equals(action)) {
+            if (!"list".equals(action) && !"new".equals(action) && !"newRequest".equals(action)
+                    && !"myDonations".equals(action) && !"myRequests".equals(action)) {
                 response.sendRedirect(request.getContextPath() + "/donations?action=myDonations");
                 return;
             }
@@ -162,38 +162,38 @@ public class DonationServlet extends HttpServlet {
 
     private void showUserDonations(HttpServletRequest request, HttpServletResponse response, String username)
             throws ServletException, IOException {
-    
+
         DataManager dm = DataManager.getInstance();
         List<Donation> userDonations = dm.getDonationsByUser(username);
-        
+
         System.out.println("DEBUG: Donaciones del usuario " + username + ": " + userDonations.size());
-        
+
         if (userDonations == null) {
             userDonations = new java.util.ArrayList<>();
         }
-        
+
         request.setAttribute("donations", userDonations);
         request.setAttribute("totalDonations", userDonations.size());
         request.setAttribute("activeDonations", userDonations.stream()
                 .filter(d -> "active".equals(d.getStatus()))
                 .count());
         request.setAttribute("userType", "usuario");
-        
+
         request.getRequestDispatcher("/WEB-INF/views/usuario/donation_list.jsp").forward(request, response);
     }
 
     private void showUserRequests(HttpServletRequest request, HttpServletResponse response, String username)
             throws ServletException, IOException {
-    
+
         DataManager dm = DataManager.getInstance();
         List<Request> userRequests = dm.getRequestsByUser(username);
-        
+
         System.out.println("DEBUG: Solicitudes del usuario " + username + ": " + userRequests.size());
-        
+
         if (userRequests == null) {
             userRequests = new java.util.ArrayList<>();
         }
-        
+
         request.setAttribute("userRequests", userRequests);
         request.setAttribute("totalUserRequests", userRequests.size());
         request.setAttribute("pendingRequests", userRequests.stream()
@@ -205,7 +205,7 @@ public class DonationServlet extends HttpServlet {
         request.setAttribute("completedRequests", userRequests.stream()
                 .filter(r -> "completed".equals(r.getStatus()))
                 .count());
-        
+
         request.getRequestDispatcher("/WEB-INF/views/usuario/request_list.jsp").forward(request, response);
     }
 
@@ -218,18 +218,36 @@ public class DonationServlet extends HttpServlet {
             String quantityStr = request.getParameter("quantity");
             String condition = request.getParameter("condition");
             String location = request.getParameter("location");
-            String pickupAddress = request.getParameter("pickupAddress");
+            String address = request.getParameter("address");
 
-            // Validate required fields
-            if (donationType == null || description == null || quantityStr == null
-                    || condition == null || location == null) {
-                response.sendRedirect(request.getContextPath() + "/donations?action=new&error=missing");
+            // Validar campos requeridos
+            if (donationType == null || donationType.trim().isEmpty()
+                    || description == null || description.trim().isEmpty()
+                    || quantityStr == null || quantityStr.trim().isEmpty()
+                    || condition == null || condition.trim().isEmpty()
+                    || location == null || location.trim().isEmpty()) {
+
+                System.out.println("ERROR: Campos faltantes en la donación");
+                // Redirigir de vuelta al formulario con error
+                request.setAttribute("errorMessage", "Por favor, completa todos los campos requeridos");
+                request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
                 return;
             }
 
-            int quantity = Integer.parseInt(quantityStr);
+            int quantity;
+            try {
+                quantity = Integer.parseInt(quantityStr);
+                if (quantity <= 0) {
+                    throw new NumberFormatException();
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("ERROR: Cantidad inválida: " + quantityStr);
+                request.setAttribute("errorMessage", "La cantidad debe ser un número válido mayor a 0");
+                request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
+                return;
+            }
 
-            // Create donation
+            // Crear y guardar donación
             Donation donation = new Donation();
             donation.setDonorUsername(username);
             donation.setType(donationType);
@@ -237,27 +255,40 @@ public class DonationServlet extends HttpServlet {
             donation.setQuantity(quantity);
             donation.setCondition(condition);
             donation.setLocation(location);
-            
-            if (pickupAddress != null && !pickupAddress.trim().isEmpty()) {
-                donation.setPickupAddress(pickupAddress);
-            }
-            
             donation.setStatus("pending");
 
-            DataManager.getInstance().addDonation(donation);
-
-            String userType = (String) request.getSession().getAttribute("userType");
-            if ("usuario".equals(userType)) {
-                response.sendRedirect(request.getContextPath() + "/donations?action=myDonations&success=created");
-            } else {
-                response.sendRedirect(request.getContextPath() + "/dashboard?success=donation_created");
+            if (address != null && !address.trim().isEmpty()) {
+                donation.setAddress(address);
             }
 
-        } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/donations?action=new&error=invalid_quantity");
+            DataManager dm = DataManager.getInstance();
+            boolean success = dm.addDonation(donation);
+
+            if (success) {
+                System.out.println("ÉXITO: Donación guardada para usuario: " + username);
+
+                // Determinar dónde redirigir según el tipo de usuario
+                String userType = (String) request.getSession().getAttribute("userType");
+                String redirectUrl;
+
+                if ("usuario".equals(userType)) {
+                    redirectUrl = request.getContextPath() + "/profile?success=donation_created&tab=donations";
+                } else {
+                    redirectUrl = request.getContextPath() + "/donations?action=list&success=donation_created";
+                }
+
+                response.sendRedirect(redirectUrl);
+            } else {
+                System.out.println("ERROR: No se pudo guardar la donación en la BD");
+                request.setAttribute("errorMessage", "Error al guardar la donación en la base de datos");
+                request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
+            }
+
         } catch (Exception e) {
+            System.out.println("ERROR EXCEPCIÓN en createDonation: " + e.getMessage());
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/donations?action=new&error=general");
+            request.setAttribute("errorMessage", "Error interno del servidor: " + e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
         }
     }
 
@@ -273,18 +304,23 @@ public class DonationServlet extends HttpServlet {
             // Validar campos
             if (requestType == null || requestDescription == null || requestLocation == null
                     || requestType.trim().isEmpty() || requestDescription.trim().isEmpty() || requestLocation.trim().isEmpty()) {
-                response.sendRedirect(request.getContextPath() + "/dashboard?error=request_missing_fields");
+                // CORREGIDO: Redirigir según tipo de usuario
+                String userType = (String) request.getSession().getAttribute("userType");
+                if ("usuario".equals(userType)) {
+                    response.sendRedirect(request.getContextPath() + "/profile?error=request_missing_fields&tab=requests");
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/dashboard?error=request_missing_fields");
+                }
                 return;
             }
 
-            // CORREGIDO: Usar setRequestedBy en lugar de setRequesterUsername
             Request newRequest = new Request();
-            newRequest.setRequestedBy(username); // Usando el método correcto
+            newRequest.setRequestedBy(username);
             newRequest.setType(requestType);
             newRequest.setDescription(requestDescription);
             newRequest.setLocation(requestLocation);
             newRequest.setStatus("pending");
-            
+
             // Establecer prioridad si se proporciona
             if (priorityStr != null && !priorityStr.isEmpty()) {
                 try {
@@ -293,12 +329,14 @@ public class DonationServlet extends HttpServlet {
                     newRequest.setPriority(3);
                 }
             }
-            
+
             DataManager.getInstance().addRequest(newRequest);
 
             String userType = (String) request.getSession().getAttribute("userType");
+
+            // CORREGIDO: Redirigir según tipo de usuario
             if ("usuario".equals(userType)) {
-                response.sendRedirect(request.getContextPath() + "/donations?action=myRequests&success=created");
+                response.sendRedirect(request.getContextPath() + "/profile?success=request_created&tab=requests");
             } else {
                 response.sendRedirect(request.getContextPath() + "/dashboard?success=request_created");
             }
@@ -306,7 +344,12 @@ public class DonationServlet extends HttpServlet {
         } catch (Exception e) {
             getServletContext().log("Error creando Request en DonationServlet", e);
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/dashboard?error=request_failed");
+            String userType = (String) request.getSession().getAttribute("userType");
+            if ("usuario".equals(userType)) {
+                response.sendRedirect(request.getContextPath() + "/profile?error=request_failed&tab=requests");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/dashboard?error=request_failed");
+            }
         }
     }
 
@@ -326,5 +369,32 @@ public class DonationServlet extends HttpServlet {
         request.setAttribute("totalReceivers", dm.getTotalReceivers());
 
         response.sendRedirect(request.getContextPath() + "/dashboard");
+    }
+
+    // En DonationServlet - AGREGAR ESTOS MÉTODOS
+    private String getSuccessMessage(String successType) {
+        switch (successType) {
+            case "donation_created":
+                return "¡Donación creada exitosamente!";
+            case "request_created":
+                return "¡Solicitud creada exitosamente!";
+            default:
+                return "Operación completada exitosamente";
+        }
+    }
+
+    private String getErrorMessage(String errorType) {
+        switch (errorType) {
+            case "missing_fields":
+                return "Por favor, completa todos los campos requeridos";
+            case "invalid_quantity":
+                return "La cantidad debe ser un número válido mayor a 0";
+            case "save_failed":
+                return "Error al guardar la información en la base de datos";
+            case "general":
+                return "Ha ocurrido un error inesperado. Intenta nuevamente";
+            default:
+                return "Ha ocurrido un error. Intenta nuevamente";
+        }
     }
 }

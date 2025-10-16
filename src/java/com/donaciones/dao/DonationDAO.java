@@ -27,39 +27,52 @@ public class DonationDAO {
         List<Donation> donations = new ArrayList<>();
         String sql = "SELECT * FROM donaciones WHERE donor_username = ? ORDER BY created_date DESC";
 
+        System.out.println("DEBUG DonationDAO - Buscando donaciones para usuario: " + username);
+
         try (Connection conn = Conexion.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
 
+            int count = 0;
             while (rs.next()) {
                 donations.add(mapDonation(rs));
+                count++;
             }
+            System.out.println("DEBUG DonationDAO - Donaciones encontradas: " + count);
+
         } catch (SQLException e) {
+            System.out.println("ERROR DonationDAO - Error al buscar donaciones: " + e.getMessage());
             e.printStackTrace();
         }
         return donations;
     }
 
     public boolean addDonation(Donation donation) {
-        String sql = "INSERT INTO donaciones (type, description, quantity, item_condition, location, donor_username, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    String sql = "INSERT INTO donaciones (type, description, quantity, item_condition, location, address, donor_username, status, created_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
-        try (Connection conn = Conexion.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    try (Connection conn = Conexion.getConnection(); 
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, donation.getType());
-            pstmt.setString(2, donation.getDescription());
-            pstmt.setInt(3, donation.getQuantity());
-            pstmt.setString(4, donation.getCondition());
-            pstmt.setString(5, donation.getLocation());
-            pstmt.setString(6, donation.getDonorUsername());
-            pstmt.setString(7, donation.getStatus());
+        pstmt.setString(1, donation.getType());
+        pstmt.setString(2, donation.getDescription());
+        pstmt.setInt(3, donation.getQuantity());
+        pstmt.setString(4, donation.getCondition());
+        pstmt.setString(5, donation.getLocation());
+        pstmt.setString(6, donation.getAddress()); // Campo opcional
+        pstmt.setString(7, donation.getDonorUsername());
+        pstmt.setString(8, donation.getStatus());
 
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        int result = pstmt.executeUpdate();
+        System.out.println("DEBUG DonationDAO - Donación insertada, filas afectadas: " + result);
+        return result > 0;
+        
+    } catch (SQLException e) {
+        System.out.println("ERROR DonationDAO - Error al insertar donación: " + e.getMessage());
+        e.printStackTrace();
+        return false;
     }
+}
 
     public boolean updateDonation(Donation donation) {
         String sql = "UPDATE donaciones SET type=?, description=?, quantity=?, item_condition=?, location=?, status=?, employee_assigned=? WHERE id=?";
@@ -118,23 +131,22 @@ public class DonationDAO {
     }
 
     public List<Donation> getDonationsByEmployee(String employeeUsername) {
-    List<Donation> donations = new ArrayList<>();
-    String sql = "SELECT * FROM donaciones WHERE employee_assigned = ? ORDER BY created_date DESC";
-    
-    try (Connection conn = Conexion.getConnection();
-         PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        
-        pstmt.setString(1, employeeUsername);
-        ResultSet rs = pstmt.executeQuery();
-        
-        while (rs.next()) {
-            donations.add(mapDonation(rs));
+        List<Donation> donations = new ArrayList<>();
+        String sql = "SELECT * FROM donaciones WHERE employee_assigned = ? ORDER BY created_date DESC";
+
+        try (Connection conn = Conexion.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, employeeUsername);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                donations.add(mapDonation(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-    } catch (SQLException e) {
-        e.printStackTrace();
+        return donations;
     }
-    return donations;
-}
 
     public List<Donation> searchDonations(String type, String location, String condition) {
         List<Donation> donations = new ArrayList<>();

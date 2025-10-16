@@ -44,50 +44,43 @@
     </style>
 </head>
 <body class="bg-light">
-    <%
-        String success = request.getParameter("success");
-        String error = request.getParameter("error");
-        String tabParam = request.getParameter("tab");
-        
-        if (success != null) {
-    %>
-        <div class="alert alert-success alert-dismissible fade show mb-0" role="alert" style="border-radius: 0;">
-            <%
-                if ("donation_created".equals(success)) {
-                    out.print("<i class='fas fa-check-circle me-2'></i>¡Donación creada exitosamente!");
-                } else if ("request_created".equals(success)) {
-                    out.print("<i class='fas fa-check-circle me-2'></i>¡Solicitud creada exitosamente!");
-                } else {
-                    out.print("¡Operación completada con éxito!");
-                }
-            %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <%
-        }
-        
-        if (error != null) {
-    %>
-        <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert" style="border-radius: 0;">
-            <%
-                if ("missing_fields".equals(error)) {
-                    out.print("<i class='fas fa-exclamation-triangle me-2'></i>Por favor, complete todos los campos requeridos.");
-                } else if ("invalid_quantity".equals(error)) {
-                    out.print("<i class='fas fa-exclamation-triangle me-2'></i>La cantidad debe ser un número válido.");
-                } else if ("donation_failed".equals(error)) {
-                    out.print("<i class='fas fa-exclamation-triangle me-2'></i>Error al crear la donación. Intente nuevamente.");
-                } else if ("request_failed".equals(error)) {
-                    out.print("<i class='fas fa-exclamation-triangle me-2'></i>Error al crear la solicitud. Intente nuevamente.");
-                } else {
-                    out.print("Ha ocurrido un error. Intente nuevamente.");
-                }
-            %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <%
-        }
-    %>
-    <!--  Header -->
+    <!-- Mostrar mensajes -->
+    <div class="container mt-3">
+        <% if (request.getParameter("success") != null) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <% 
+                    String successType = request.getParameter("success");
+                    if ("donation_created".equals(successType)) {
+                        out.print("¡Donación creada exitosamente!");
+                    } else if ("request_created".equals(successType)) {
+                        out.print("¡Solicitud creada exitosamente!");
+                    } else {
+                        out.print("Operación completada exitosamente");
+                    }
+                %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } %>
+        <% if (request.getParameter("error") != null) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <% 
+                    String errorType = request.getParameter("error");
+                    if ("missing_fields".equals(errorType)) {
+                        out.print("Por favor, completa todos los campos requeridos");
+                    } else if ("invalid_quantity".equals(errorType)) {
+                        out.print("La cantidad debe ser un número válido mayor a 0");
+                    } else {
+                        out.print("Ha ocurrido un error. Intenta nuevamente");
+                    }
+                %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Header -->
     <div class="profile-header">
         <div class="container text-center">
             <div class="mb-3">
@@ -95,7 +88,7 @@
                     <i class="fas fa-user fa-3x"></i>
                 </div>
             </div>
-            <h2 class="fw-bold">Bienvenido, <%= session.getAttribute("username") %></h2>
+            <h2 class="fw-bold">Bienvenido, <%= session.getAttribute("username") != null ? session.getAttribute("username") : "Usuario" %></h2>
             <p class="mb-0">Usuario del Sistema de Donaciones Perú</p>
         </div>
     </div>
@@ -137,7 +130,7 @@
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold">Usuario</label>
                                                 <div class="form-control bg-white">
-                                                    <%= session.getAttribute("username") %>
+                                                    <%= session.getAttribute("username") != null ? session.getAttribute("username") : "N/A" %>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
@@ -190,6 +183,7 @@
                                 List<Donation> userDonations = (List<Donation>) request.getAttribute("userDonations");
                                 if (userDonations != null && !userDonations.isEmpty()) {
                                     for (Donation donation : userDonations) {
+                                        if (donation != null) {
                                 %>
                                     <div class="card donation-card border-0 shadow-sm mb-3">
                                         <div class="card-body">
@@ -200,11 +194,11 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <h6 class="fw-bold mb-1"><%= donation.getType() %></h6>
-                                                    <p class="text-muted mb-1"><%= donation.getDescription() %></p>
+                                                    <h6 class="fw-bold mb-1"><%= donation.getType() != null ? donation.getType() : "Sin tipo" %></h6>
+                                                    <p class="text-muted mb-1"><%= donation.getDescription() != null ? donation.getDescription() : "Sin descripción" %></p>
                                                     <small class="text-muted">
                                                         <i class="fas fa-map-marker-alt me-1"></i>
-                                                        <%= donation.getLocation() %>
+                                                        <%= donation.getLocation() != null ? donation.getLocation() : "Sin ubicación" %>
                                                     </small>
                                                 </div>
                                                 <div class="col-md-2 text-center">
@@ -212,13 +206,14 @@
                                                 </div>
                                                 <div class="col-md-2 text-center">
                                                     <span class="status-badge bg-success text-white">
-                                                        <%= donation.getStatus() %>
+                                                        <%= donation.getStatus() != null ? donation.getStatus() : "Desconocido" %>
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 <% 
+                                        }
                                     }
                                 } else {
                                 %>
@@ -249,9 +244,10 @@
                                 </div>
 
                                 <% 
-                                List<String> userRequests = (List<String>) request.getAttribute("userRequests");
+                                List<Request> userRequests = (List<Request>) request.getAttribute("userRequests");
                                 if (userRequests != null && !userRequests.isEmpty()) {
-                                    for (String request_item : userRequests) {
+                                    for (Request requestItem : userRequests) {
+                                        if (requestItem != null) {
                                 %>
                                     <div class="card donation-card border-0 shadow-sm mb-3">
                                         <div class="card-body">
@@ -262,18 +258,23 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-8">
-                                                    <p class="mb-0"><%= request_item %></p>
-                                                    <small class="text-muted">Solicitado hoy</small>
+                                                    <h6 class="fw-bold mb-1"><%= requestItem.getType() != null ? requestItem.getType() : "Sin tipo" %></h6>
+                                                    <p class="text-muted mb-1"><%= requestItem.getDescription() != null ? requestItem.getDescription() : "Sin descripción" %></p>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                                        <%= requestItem.getLocation() != null ? requestItem.getLocation() : "Sin ubicación" %>
+                                                    </small>
                                                 </div>
                                                 <div class="col-md-2 text-center">
                                                     <span class="status-badge bg-warning text-white">
-                                                        Pendiente
+                                                        <%= requestItem.getStatus() != null ? requestItem.getStatus() : "Pendiente" %>
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 <% 
+                                        }
                                     }
                                 } else {
                                 %>
@@ -293,7 +294,7 @@
             </div>
         </div>
 
-        <!-- Logout  -->
+        <!-- Logout -->
         <div class="text-center my-4">
             <a href="${pageContext.request.contextPath}/logout" class="btn btn-outline-danger">
                 <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
@@ -301,6 +302,7 @@
         </div>
     </div>
 
+    <!-- Modal para nueva solicitud -->
     <div class="modal fade" id="newRequestModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -358,62 +360,33 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tabParam = urlParams.get('tab');
-        const success = urlParams.get('success');
-        
-        // Determinar qué pestaña mostrar
-        let targetTab = tabParam;
-        if (!targetTab && success) {
-            if (success === 'donation_created') {
-                targetTab = 'donations';
-            } else if (success === 'request_created') {
-                targetTab = 'requests';
+        // Activar pestañas
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DEBUG - Página de perfil cargada");
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            
+            console.log("DEBUG - tabParam from URL:", tabParam);
+            
+            if (tabParam) {
+                const tabLink = document.querySelector(`a[href="#${tabParam}"]`);
+                if (tabLink) {
+                    console.log("DEBUG - Found tab link, activating:", tabParam);
+                    const tab = new bootstrap.Tab(tabLink);
+                    tab.show();
+                }
             }
-        }
-        
-        // Mostrar la pestaña correspondiente
-        if (targetTab) {
-            const tabLink = document.querySelector(`a[href="#${targetTab}"]`);
-            if (tabLink) {
-                const tab = new bootstrap.Tab(tabLink);
-                tab.show();
-                
-                // Hacer scroll suave a la pestaña
-                setTimeout(() => {
-                    document.getElementById(targetTab).scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-            }
-        }
-        
-        // Auto-cerrar alertas después de 5 segundos
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
+            
+            // Auto-ocultar alertas después de 5 segundos
             setTimeout(() => {
-                if (alert.parentNode) {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
                     const bsAlert = new bootstrap.Alert(alert);
                     bsAlert.close();
-                }
+                });
             }, 5000);
         });
-        
-        // Validación del formulario de solicitud
-        const requestForm = document.querySelector('form[action*="donations"]');
-        if (requestForm) {
-            requestForm.addEventListener('submit', function(e) {
-                const requestType = document.getElementById('requestType').value;
-                const requestDescription = document.getElementById('requestDescription').value;
-                const requestLocation = document.getElementById('requestLocation').value;
-                
-                if (!requestType || !requestDescription || !requestLocation) {
-                    e.preventDefault();
-                    alert('Por favor, completa todos los campos requeridos.');
-                    return false;
-                }
-            });
-        }
-    });
-</script>
+    </script>
 </body>
 </html>

@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DataManager {
+
     private static DataManager instance;
     private UserDAO userDAO;
     private DonationDAO donationDAO;
@@ -50,14 +51,20 @@ public class DataManager {
     public List<User> getAllUsers() {
         return userDAO.getAllUsers();
     }
-    
+
     public void addUser(User user) {
         userDAO.addUser(user);
     }
 
     // Donation operations
-    public void addDonation(Donation donation) {
-        donationDAO.addDonation(donation);
+    public boolean addDonation(Donation donation) {
+        try {
+            return donationDAO.addDonation(donation);
+        } catch (Exception e) {
+            System.out.println("ERROR DataManager - Error en addDonation: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public Donation getDonation(int id) {
@@ -75,11 +82,11 @@ public class DataManager {
     public void updateDonation(Donation donation) {
         donationDAO.updateDonation(donation);
     }
-    
+
     public List<Donation> getDonationsByStatus(String status) {
         return donationDAO.getDonationsByStatus(status);
     }
-    
+
     public List<Donation> getDonationsByEmployee(String employeeUsername) {
         return donationDAO.getDonationsByEmployee(employeeUsername);
     }
@@ -104,7 +111,7 @@ public class DataManager {
     public void updateRequest(Request request) {
         requestDAO.updateRequest(request);
     }
-    
+
     public List<Request> getRequestsByStatus(String status) {
         return requestDAO.getRequestsByStatus(status);
     }
@@ -125,7 +132,7 @@ public class DataManager {
         user.setDistrict(donor.getDistrict());
         user.setAddress(donor.getAddress());
         user.setNotificationsEnabled(donor.isNotificationsEnabled());
-        
+
         donorDAO.addDonor(donor);
     }
 
@@ -149,10 +156,10 @@ public class DataManager {
         user.setDistrict(receiver.getDistrict());
         user.setAddress(receiver.getAddress());
         user.setNotificationsEnabled(receiver.isNotificationsEnabled());
-        
+
         receiverDAO.addReceiver(receiver);
     }
-    
+
     public List<Receiver> getAllReceivers() {
         return receiverDAO.getAllReceivers();
     }
@@ -161,11 +168,11 @@ public class DataManager {
     public int getTotalDonations() {
         return donationDAO.getAllDonations().size();
     }
-    
+
     public int getTotalActiveDonations() {
         return donationDAO.getDonationsByStatus("active").size();
     }
-    
+
     public int getTotalPendingDonations() {
         return donationDAO.getDonationsByStatus("pending").size();
     }
@@ -181,100 +188,101 @@ public class DataManager {
     public int getTotalUsers() {
         return userDAO.getTotalUsers();
     }
-    
+
     public int getTotalAdmins() {
         return userDAO.getUsersByType("admin");
     }
-    
+
     public int getTotalEmployees() {
         return userDAO.getUsersByType("empleado");
     }
-    
+
     public int getTotalRegularUsers() {
         return userDAO.getUsersByType("usuario");
     }
-    
+
     // Report methods
     public Map<String, Long> getDonationsByType() {
         Map<String, Long> donationsByType = new HashMap<>();
         List<Donation> donations = getAllDonations();
-        
+
         for (Donation donation : donations) {
             donationsByType.merge(donation.getType(), 1L, Long::sum);
         }
         return donationsByType;
     }
-    
+
     public Map<String, Long> getDonationsByLocation() {
         Map<String, Long> donationsByLocation = new HashMap<>();
         List<Donation> donations = getAllDonations();
-        
+
         for (Donation donation : donations) {
             donationsByLocation.merge(donation.getLocation(), 1L, Long::sum);
         }
         return donationsByLocation;
     }
-    
+
     public Map<String, Long> getDonationsByStatusForReports() {
         Map<String, Long> donationsByStatus = new HashMap<>();
         List<Donation> donations = getAllDonations();
-        
+
         for (Donation donation : donations) {
             donationsByStatus.merge(donation.getStatus(), 1L, Long::sum);
         }
         return donationsByStatus;
     }
-    
+
     public long getRecentDonations() {
         List<Donation> donations = getAllDonations();
         long recentCount = 0;
         long oneMonthAgo = System.currentTimeMillis() - (30L * 24L * 60L * 60L * 1000L);
-        
+
         for (Donation donation : donations) {
-            if (donation.getCreatedDate() != null && 
-                donation.getCreatedDate().getTime() > oneMonthAgo) {
+            if (donation.getCreatedDate() != null
+                    && donation.getCreatedDate().getTime() > oneMonthAgo) {
                 recentCount++;
             }
         }
         return recentCount;
     }
-    
+
     // Employee-specific statistics
     public long getEmployeeDonations(String employeeUsername) {
         return donationDAO.getDonationsByEmployee(employeeUsername).size();
     }
-    
+
     public long getEmployeeActiveDonations(String employeeUsername) {
         List<Donation> employeeDonations = donationDAO.getDonationsByEmployee(employeeUsername);
         return employeeDonations.stream()
                 .filter(d -> "active".equals(d.getStatus()) || "in_progress".equals(d.getStatus()))
                 .count();
     }
-    
+
     public long getEmployeeCompletedDonations(String employeeUsername) {
         List<Donation> employeeDonations = donationDAO.getDonationsByEmployee(employeeUsername);
         return employeeDonations.stream()
                 .filter(d -> "completed".equals(d.getStatus()))
                 .count();
     }
-    
+
     public Map<String, Long> getEmployeeDonationsByType(String employeeUsername) {
         Map<String, Long> donationsByType = new HashMap<>();
         List<Donation> employeeDonations = donationDAO.getDonationsByEmployee(employeeUsername);
-        
+
         for (Donation donation : employeeDonations) {
             donationsByType.merge(donation.getType(), 1L, Long::sum);
         }
         return donationsByType;
     }
-    
+
     public Map<String, Long> getEmployeeDonationsByLocation(String employeeUsername) {
         Map<String, Long> donationsByLocation = new HashMap<>();
         List<Donation> employeeDonations = donationDAO.getDonationsByEmployee(employeeUsername);
-        
+
         for (Donation donation : employeeDonations) {
             donationsByLocation.merge(donation.getLocation(), 1L, Long::sum);
         }
         return donationsByLocation;
     }
+
 }
