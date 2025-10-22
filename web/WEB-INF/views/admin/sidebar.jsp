@@ -22,15 +22,16 @@
                href="${pageContext.request.contextPath}/donationManagement">
                 <i class="fas fa-gift me-2"></i>Gestión Donaciones
             </a>
-            <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/userManagement") ? "active" : ""%>" 
-               href="${pageContext.request.contextPath}/userManagement?action=list">
-                <i class="fas fa-users-cog me-2"></i>Gestión de Usuarios
-            </a>
-            <!-- NUEVO: Enlace para Gestión de Solicitudes -->
+                <!-- NUEVO: Enlace para Gestión de Solicitudes -->
             <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/requestManagement") ? "active" : ""%>" 
                href="${pageContext.request.contextPath}/requestManagement?action=list">
                 <i class="fas fa-list-alt me-2"></i>Gestión de Solicitudes
             </a>
+            <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/userManagement") ? "active" : ""%>" 
+               href="${pageContext.request.contextPath}/userManagement?action=list">
+                <i class="fas fa-users-cog me-2"></i>Gestión de Usuarios
+            </a>
+            
             <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/users") && request.getQueryString() != null && request.getQueryString().contains("newDonor") ? "active" : ""%>" 
                href="${pageContext.request.contextPath}/users?action=newDonor">
                 <i class="fas fa-hand-holding-heart me-2"></i>Registrar Donador

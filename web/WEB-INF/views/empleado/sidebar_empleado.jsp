@@ -42,6 +42,9 @@
                href="${pageContext.request.contextPath}/reports">
                 <i class="fas fa-chart-bar me-2"></i>Mis Reportes
             </a>
+            <a class="nav-link" href="${pageContext.request.contextPath}/employeeDonations">
+                <i class="fas fa-box me-2"></i>Gestión de Donaciones
+            </a>
             <hr class="text-white-50">
             <a class="nav-link" href="${pageContext.request.contextPath}/logout">
                 <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión

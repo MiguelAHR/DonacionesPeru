@@ -122,6 +122,55 @@ public class UserDAO {
         }
         return 0;
     }
+
+    // NUEVO MÉTODO: Obtener lista de empleados con nombres completos
+    public List<String[]> getEmployeesWithNames() {
+        List<String[]> employees = new ArrayList<>();
+        String sql = "SELECT username, first_name, last_name FROM usuarios WHERE user_type = 'empleado' ORDER BY first_name, last_name";
+        
+        try (Connection conn = Conexion.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                String[] employee = new String[3];
+                employee[0] = rs.getString("username");
+                employee[1] = rs.getString("first_name");
+                employee[2] = rs.getString("last_name");
+                employees.add(employee);
+            }
+            
+        } catch (SQLException e) {
+            System.out.println("ERROR UserDAO - Error obteniendo empleados con nombres: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return employees;
+    }
+
+    // NUEVO MÉTODO: Obtener solo usernames de empleados
+    public List<String> getEmployeeUsernames() {
+        List<String> employees = new ArrayList<>();
+        String sql = "SELECT username FROM usuarios WHERE user_type = 'empleado' ORDER BY username";
+        
+        System.out.println("DEBUG UserDAO - Obteniendo lista de empleados");
+
+        try (Connection conn = Conexion.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            int count = 0;
+            while (rs.next()) {
+                employees.add(rs.getString("username"));
+                count++;
+            }
+            System.out.println("DEBUG UserDAO - Empleados encontrados: " + count);
+            
+        } catch (SQLException e) {
+            System.out.println("ERROR UserDAO - Error obteniendo empleados: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return employees;
+    }
     
     private User mapUser(ResultSet rs) throws SQLException {
         User user = new User();

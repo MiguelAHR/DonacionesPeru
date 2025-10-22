@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 
 public class Donation {
+
     private int id;
     private String donorUsername;
     private String donorName; // Nuevo campo para mostrar nombre del donante
@@ -61,11 +62,11 @@ public class Donation {
         this.location = location;
     }
 
-    public Donation(int id, String donorUsername, String type, String description, 
-                   int quantity, String condition, String location, String status, 
-                   Date createdDate, Date updatedDate, String employeeUsername, 
-                   String receiverUsername, Date deliveryDate, String notes, 
-                   String images, boolean urgent, String size, double estimatedValue) {
+    public Donation(int id, String donorUsername, String type, String description,
+            int quantity, String condition, String location, String status,
+            Date createdDate, Date updatedDate, String employeeUsername,
+            String receiverUsername, Date deliveryDate, String notes,
+            String images, boolean urgent, String size, double estimatedValue) {
         this.id = id;
         this.donorUsername = donorUsername;
         this.type = type;
@@ -336,20 +337,20 @@ public class Donation {
     public void setTags(List<String> tags) {
         this.tags = tags != null ? tags : new ArrayList<>();
     }
-    
+
     // Getters y Setters
     public Date getDonationDate() {
         return donationDate;
     }
-    
+
     public void setDonationDate(Date donationDate) {
         this.donationDate = donationDate;
     }
-    
+
     public String getAddress() {
         return address;
     }
-    
+
     public void setAddress(String address) {
         this.address = address;
     }
@@ -450,10 +451,10 @@ public class Donation {
     }
 
     public boolean requiresPickup() {
-        return "furniture".equalsIgnoreCase(type) || 
-               "electronics".equalsIgnoreCase(type) ||
-               "large".equalsIgnoreCase(size) ||
-               quantity > 5;
+        return "furniture".equalsIgnoreCase(type)
+                || "electronics".equalsIgnoreCase(type)
+                || "large".equalsIgnoreCase(size)
+                || quantity > 5;
     }
 
     public String getFormattedStatus() {
@@ -566,7 +567,9 @@ public class Donation {
     }
 
     public int getDaysSinceCreation() {
-        if (createdDate == null) return 0;
+        if (createdDate == null) {
+            return 0;
+        }
         long diff = System.currentTimeMillis() - createdDate.getTime();
         return (int) (diff / (1000 * 60 * 60 * 24));
     }
@@ -599,52 +602,72 @@ public class Donation {
 
     // Validation methods
     public boolean isValid() {
-        return donorUsername != null && !donorUsername.trim().isEmpty() &&
-               type != null && !type.trim().isEmpty() &&
-               description != null && !description.trim().isEmpty() &&
-               quantity > 0;
+        return donorUsername != null && !donorUsername.trim().isEmpty()
+                && type != null && !type.trim().isEmpty()
+                && description != null && !description.trim().isEmpty()
+                && quantity > 0;
     }
 
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
-        
+
         if (donorUsername == null || donorUsername.trim().isEmpty()) {
             errors.add("El nombre de usuario del donante es requerido");
         }
-        
+
         if (type == null || type.trim().isEmpty()) {
             errors.add("El tipo de donación es requerido");
         }
-        
+
         if (description == null || description.trim().isEmpty()) {
             errors.add("La descripción es requerida");
         }
-        
+
         if (quantity <= 0) {
             errors.add("La cantidad debe ser mayor a 0");
         }
-        
+
         if (location == null || location.trim().isEmpty()) {
             errors.add("La ubicación es requerida");
         }
-        
+
         return errors;
+    }
+
+    // En la clase Donation.java, agregar estos métodos:
+    public String getEmployeeAssigned() {
+        return this.employeeUsername;
+    }
+
+    public void setEmployeeAssigned(String employeeAssigned) {
+        this.employeeUsername = employeeAssigned;
+    }
+
+// Método para verificar si el usuario puede editar esta donación
+    public boolean canBeEditedBy(String username, String userType) {
+        if ("admin".equals(userType)) {
+            return true;
+        }
+        if ("empleado".equals(userType)) {
+            return this.employeeUsername == null || this.employeeUsername.equals(username);
+        }
+        return false;
     }
 
     @Override
     public String toString() {
-        return "Donation{" +
-                "id=" + id +
-                ", donorUsername='" + donorUsername + '\'' +
-                ", type='" + type + '\'' +
-                ", description='" + description + '\'' +
-                ", quantity=" + quantity +
-                ", condition='" + condition + '\'' +
-                ", location='" + location + '\'' +
-                ", status='" + status + '\'' +
-                ", createdDate=" + createdDate +
-                ", urgent=" + urgent +
-                ", estimatedValue=" + estimatedValue +
-                '}';
+        return "Donation{"
+                + "id=" + id
+                + ", donorUsername='" + donorUsername + '\''
+                + ", type='" + type + '\''
+                + ", description='" + description + '\''
+                + ", quantity=" + quantity
+                + ", condition='" + condition + '\''
+                + ", location='" + location + '\''
+                + ", status='" + status + '\''
+                + ", createdDate=" + createdDate
+                + ", urgent=" + urgent
+                + ", estimatedValue=" + estimatedValue
+                + '}';
     }
 }

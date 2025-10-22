@@ -56,9 +56,16 @@ public class ProfileServlet extends HttpServlet {
                     break;
                 case "usuario":
                     System.out.println("DEBUG ProfileServlet - Cargando perfil de usuario");
-                    loadUserProfileData(request, username, dm);
-                    System.out.println("DEBUG ProfileServlet - Redirigiendo a profile_user.jsp");
-                    request.getRequestDispatcher("/WEB-INF/views/usuario/profile_user.jsp").forward(request, response);
+                    try {
+                        loadUserProfileData(request, username, dm);
+                        System.out.println("DEBUG ProfileServlet - Redirigiendo a profile_user.jsp");
+                        request.getRequestDispatcher("/WEB-INF/views/usuario/profile_user.jsp").forward(request, response);
+                    } catch (Exception e) {
+                        System.out.println("ERROR ProfileServlet - Excepción al cargar perfil de usuario: " + e.getMessage());
+                        e.printStackTrace();
+                        // En caso de error, redirigir al dashboard
+                        response.sendRedirect(request.getContextPath() + "/dashboard");
+                    }
                     break;
                 default:
                     System.out.println("DEBUG ProfileServlet - Tipo de usuario desconocido, redirigiendo a dashboard");

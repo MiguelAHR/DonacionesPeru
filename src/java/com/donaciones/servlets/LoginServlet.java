@@ -14,7 +14,24 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Redirect to login page
+        // Si ya está logueado, redirigir al dashboard
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("username") != null) {
+            String userType = (String) session.getAttribute("userType");
+            if (userType != null) {
+                switch (userType.toLowerCase()) {
+                    case "admin":
+                    case "empleado":
+                        response.sendRedirect(request.getContextPath() + "/dashboard");
+                        return;
+                    case "usuario":
+                        response.sendRedirect(request.getContextPath() + "/profile");
+                        return;
+                }
+            }
+        }
+        
+        // Si no está logueado, mostrar login
         request.getRequestDispatcher("/WEB-INF/views/general/login.jsp").forward(request, response);
     }
 
@@ -24,6 +41,8 @@ public class LoginServlet extends HttpServlet {
 
         String username = request.getParameter("username");
         String password = request.getParameter("password");
+
+        System.out.println("DEBUG LoginServlet - Intentando login para: " + username);
 
         // Validate input
         if (username == null || password == null || username.trim().isEmpty() || password.trim().isEmpty()) {
@@ -42,78 +61,33 @@ public class LoginServlet extends HttpServlet {
             session.setAttribute("userType", user.getUserType());
             session.setAttribute("user", user);
 
-            // Redirect based on user type
+            System.out.println("DEBUG LoginServlet - Login exitoso. Usuario: " + username + ", Tipo: " + user.getUserType());
+
+            // REDIRECT en lugar de forward - ESTO ES CLAVE
+            String redirectPath;
             switch (user.getUserType().toLowerCase()) {
                 case "admin":
-                    // Load admin dashboard data
-                    loadAdminDashboardData(request);
-                    request.getRequestDispatcher("/WEB-INF/views/admin/dashboard_admin.jsp").forward(request, response);
-                    break;
                 case "empleado":
-                    // Load employee dashboard data
-                    loadEmployeeDashboardData(request, user.getUsername());
-                    request.getRequestDispatcher("/WEB-INF/views/empleado/dashboard_employee.jsp").forward(request, response);
+                    redirectPath = "/dashboard";
                     break;
                 case "usuario":
-                    // Load user profile data
-                    loadUserProfileData(request, user.getUsername());
-                    request.getRequestDispatcher("/WEB-INF/views/usuario/profile_user.jsp").forward(request, response);
+                    redirectPath = "/profile";
                     break;
                 default:
-                    request.setAttribute("error", "invalid");
-                    request.getRequestDispatcher("/WEB-INF/views/general/login.jsp").forward(request, response);
+                    redirectPath = "/dashboard";
             }
+            
+            System.out.println("DEBUG LoginServlet - Redirigiendo a: " + redirectPath);
+            response.sendRedirect(request.getContextPath() + redirectPath);
+            
         } else {
             // Authentication failed
+            System.out.println("DEBUG LoginServlet - Login fallido para: " + username);
             request.setAttribute("error", "invalid");
             request.getRequestDispatcher("/WEB-INF/views/general/login.jsp").forward(request, response);
-
         }
     }
 
-    private void loadAdminDashboardData(HttpServletRequest request) {
-        DataManager dm = DataManager.getInstance();
-
-        request.setAttribute("totalDonations", dm.getAllDonations().size());
-        request.setAttribute("totalDonors", dm.getAllDonors().size());
-        request.setAttribute("totalReceivers", dm.getAllReceivers().size());
-        request.setAttribute("totalUsers", dm.getAllUsers().size());
-
-        // Recent activity (sample data)
-        java.util.List<String> recentActivity = new java.util.ArrayList<>();
-        recentActivity.add("Nuevo donador registrado: María García");
-        recentActivity.add("Donación de ropa completada en Lima");
-        recentActivity.add("Receptor verificado: Carlos Mendoza");
-        recentActivity.add("Nueva donación de útiles escolares registrada");
-        request.setAttribute("recentActivity", recentActivity);
-    }
-
-    private void loadEmployeeDashboardData(HttpServletRequest request, String employeeUsername) {
-        DataManager dm = DataManager.getInstance();
-
-        // For demo purposes, showing sample data
-        request.setAttribute("myDonors", 15);
-        request.setAttribute("myReceivers", 8);
-        request.setAttribute("myDonations", 23);
-
-        // Recent work (sample data)
-        java.util.List<String> recentWork = new java.util.ArrayList<>();
-        recentWork.add("Registré a la familia Rodríguez como receptores");
-        recentWork.add("Coordiné donación de ropa en San Juan de Lurigancho");
-        recentWork.add("Verifiqué datos de donador en Miraflores");
-        request.setAttribute("recentWork", recentWork);
-    }
-
-    private void loadUserProfileData(HttpServletRequest request, String username) {
-        DataManager dm = DataManager.getInstance();
-
-        // Load user's donations
-        request.setAttribute("userDonations", dm.getDonationsByUser(username));
-
-        // Sample user requests
-        java.util.List<String> userRequests = new java.util.ArrayList<>();
-        userRequests.add("Solicitud de ropa para niños - Pendiente");
-        userRequests.add("Solicitud de útiles escolares - En proceso");
-        request.setAttribute("userRequests", userRequests);
-    }
+    // Elimina los métodos loadAdminDashboardData, loadEmployeeDashboardData y loadUserProfileData
+    // porque ahora eso lo manejan DashboardServlet y ProfileServlet
 }
