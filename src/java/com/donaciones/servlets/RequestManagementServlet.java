@@ -84,6 +84,9 @@ public class RequestManagementServlet extends HttpServlet {
                 case "updateRequest":
                     updateRequest(request, response);
                     break;
+                case "takeRequest": // NUEVO: Para que empleados tomen solicitudes
+                    takeRequest(request, response);
+                    break;
                 default:
                     response.sendRedirect(request.getContextPath() + "/requestManagement");
             }
@@ -117,48 +120,63 @@ public class RequestManagementServlet extends HttpServlet {
     private void handleListRequests(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        HttpSession session = request.getSession(false);
+        String userType = (String) session.getAttribute("userType");
+        String username = (String) session.getAttribute("username");
+
         // Obtener parámetros de filtro
         String statusFilter = request.getParameter("status");
         String typeFilter = request.getParameter("type");
         String locationFilter = request.getParameter("location");
 
-        System.out.println("DEBUG RequestManagementServlet - Filtros aplicados:");
-        System.out.println("DEBUG - Status: " + statusFilter);
-        System.out.println("DEBUG - Type: " + typeFilter);
-        System.out.println("DEBUG - Location: " + locationFilter);
+        System.out.println("DEBUG RequestManagementServlet - Usuario: " + username + ", Tipo: " + userType);
+        System.out.println("DEBUG - Filtros aplicados - Status: " + statusFilter + ", Type: " + typeFilter + ", Location: " + locationFilter);
 
         List<Request> requests;
 
-        // Verificar si hay filtros activos
-        boolean hasFilters = (statusFilter != null && !statusFilter.isEmpty()) ||
-                           (typeFilter != null && !typeFilter.isEmpty()) ||
-                           (locationFilter != null && !locationFilter.isEmpty());
+        if ("admin".equals(userType)) {
+            // Lógica de admin (igual que antes)
+            boolean hasFilters = (statusFilter != null && !statusFilter.isEmpty()) ||
+                               (typeFilter != null && !typeFilter.isEmpty()) ||
+                               (locationFilter != null && !locationFilter.isEmpty());
 
-        if (hasFilters) {
-            // Usar método con filtros
-            requests = requestDAO.getRequestsByFilters(statusFilter, typeFilter, locationFilter);
-            System.out.println("DEBUG RequestManagementServlet - Usando filtros, solicitudes encontradas: " + requests.size());
+            if (hasFilters) {
+                requests = requestDAO.getRequestsByFilters(statusFilter, typeFilter, locationFilter);
+            } else {
+                requests = requestDAO.getAllRequests();
+            }
+
+            request.setAttribute("currentStatus", statusFilter);
+            request.setAttribute("currentType", typeFilter);
+            request.setAttribute("currentLocation", locationFilter);
+            
         } else {
-            // Obtener todas las solicitudes
-            requests = requestDAO.getAllRequests();
-            System.out.println("DEBUG RequestManagementServlet - Sin filtros, solicitudes totales: " + requests.size());
+            // Lógica para empleado - solo sus solicitudes asignadas
+            boolean hasFilters = (statusFilter != null && !statusFilter.isEmpty()) ||
+                               (typeFilter != null && !typeFilter.isEmpty()) ||
+                               (locationFilter != null && !locationFilter.isEmpty());
+
+            if (hasFilters) {
+                requests = requestDAO.getRequestsByEmployeeWithFilters(username, statusFilter, typeFilter, locationFilter);
+            } else {
+                requests = requestDAO.getRequestsByEmployee(username);
+            }
+
+            request.setAttribute("currentStatus", statusFilter);
+            request.setAttribute("currentType", typeFilter);
+            request.setAttribute("currentLocation", locationFilter);
         }
 
-        // Pasar los filtros actuales a la vista para mantenerlos en el formulario
-        request.setAttribute("currentStatus", statusFilter);
-        request.setAttribute("currentType", typeFilter);
-        request.setAttribute("currentLocation", locationFilter);
         request.setAttribute("requests", requests);
 
-        // Calcular estadísticas para la vista actual (filtrada o total)
+        // Calcular estadísticas para la vista actual
         long pendingRequests = requests.stream().filter(req -> "pending".equals(req.getStatus())).count();
         long inProgressRequests = requests.stream().filter(req -> "in_progress".equals(req.getStatus())).count();
+        long completedRequests = requests.stream().filter(req -> "completed".equals(req.getStatus())).count();
 
         request.setAttribute("pendingRequests", pendingRequests);
         request.setAttribute("inProgressRequests", inProgressRequests);
-
-        HttpSession session = request.getSession(false);
-        String userType = (String) session.getAttribute("userType");
+        request.setAttribute("completedRequests", completedRequests);
 
         if ("admin".equals(userType)) {
             request.getRequestDispatcher("/WEB-INF/views/admin/request_management.jsp").forward(request, response);
@@ -224,6 +242,10 @@ public class RequestManagementServlet extends HttpServlet {
     private void updateRequestStatus(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
+        HttpSession session = request.getSession(false);
+        String username = (String) session.getAttribute("username");
+        String userType = (String) session.getAttribute("userType");
+
         try {
             int requestId = Integer.parseInt(request.getParameter("requestId"));
             String newStatus = request.getParameter("status");
@@ -231,6 +253,15 @@ public class RequestManagementServlet extends HttpServlet {
             if (!isValidStatus(newStatus)) {
                 response.sendRedirect(request.getContextPath() + "/requestManagement?error=invalid_status");
                 return;
+            }
+
+            // Si es empleado, verificar que la solicitud le pertenece
+            if ("empleado".equals(userType)) {
+                Request req = requestDAO.getRequest(requestId);
+                if (req == null || !username.equals(req.getAssignedTo())) {
+                    response.sendRedirect(request.getContextPath() + "/requestManagement?error=no_permission");
+                    return;
+                }
             }
 
             boolean success = requestDAO.updateRequestStatus(requestId, newStatus);
@@ -304,6 +335,45 @@ public class RequestManagementServlet extends HttpServlet {
 
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/requestManagement?error=invalid_data");
+        }
+    }
+
+    // MÉTODO NUEVO: Para que empleados tomen solicitudes disponibles
+    private void takeRequest(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        
+        HttpSession session = request.getSession(false);
+        String username = (String) session.getAttribute("username");
+        
+        System.out.println("DEBUG RequestManagementServlet - Empleado " + username + " intentando tomar solicitud");
+        
+        try {
+            int requestId = Integer.parseInt(request.getParameter("requestId"));
+            
+            Request req = requestDAO.getRequest(requestId);
+            if (req == null) {
+                response.sendRedirect(request.getContextPath() + "/requestManagement?error=not_found");
+                return;
+            }
+            
+            // Verificar que la solicitud esté disponible (sin asignar)
+            if (req.getAssignedTo() != null && !req.getAssignedTo().trim().isEmpty()) {
+                response.sendRedirect(request.getContextPath() + "/requestManagement?error=already_assigned");
+                return;
+            }
+            
+            // Asignar la solicitud al empleado
+            boolean success = requestDAO.assignRequestToEmployee(requestId, username);
+            
+            if (success) {
+                System.out.println("DEBUG RequestManagementServlet - Solicitud " + requestId + " asignada a " + username);
+                response.sendRedirect(request.getContextPath() + "/requestManagement?success=request_taken");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/requestManagement?error=take_failed");
+            }
+            
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/requestManagement?error=invalid_id");
         }
     }
 

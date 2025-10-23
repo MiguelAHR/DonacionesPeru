@@ -266,6 +266,107 @@ public class RequestDAO {
         }
         return 0;
     }
+
+    // MÉTODO NUEVO: Obtener solicitudes por empleado asignado
+    public List<Request> getRequestsByEmployee(String employeeUsername) {
+        List<Request> requests = new ArrayList<>();
+        String sql = "SELECT * FROM solicitudes WHERE assigned_to = ? ORDER BY request_date DESC";
+        
+        System.out.println("DEBUG RequestDAO - Buscando solicitudes para empleado: " + employeeUsername);
+        
+        try (Connection conn = Conexion.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, employeeUsername);
+            ResultSet rs = pstmt.executeQuery();
+            
+            int count = 0;
+            while (rs.next()) {
+                requests.add(mapRequest(rs));
+                count++;
+            }
+            
+            System.out.println("DEBUG RequestDAO - Solicitudes del empleado encontradas: " + count);
+            
+        } catch (SQLException e) {
+            System.out.println("ERROR RequestDAO - Error obteniendo solicitudes por empleado: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return requests;
+    }
+
+    // MÉTODO NUEVO: Obtener solicitudes disponibles (sin asignar)
+    public List<Request> getAvailableRequests() {
+        List<Request> requests = new ArrayList<>();
+        String sql = "SELECT * FROM solicitudes WHERE assigned_to IS NULL OR assigned_to = '' ORDER BY request_date DESC";
+        
+        System.out.println("DEBUG RequestDAO - Buscando solicitudes disponibles");
+        
+        try (Connection conn = Conexion.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            int count = 0;
+            while (rs.next()) {
+                requests.add(mapRequest(rs));
+                count++;
+            }
+            
+            System.out.println("DEBUG RequestDAO - Solicitudes disponibles encontradas: " + count);
+            
+        } catch (SQLException e) {
+            System.out.println("ERROR RequestDAO - Error obteniendo solicitudes disponibles: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return requests;
+    }
+
+    // MÉTODO NUEVO: Filtrar solicitudes por empleado con filtros
+    public List<Request> getRequestsByEmployeeWithFilters(String employeeUsername, String status, String type, String location) {
+        List<Request> requests = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM solicitudes WHERE assigned_to = ?");
+        List<Object> parameters = new ArrayList<>();
+        parameters.add(employeeUsername);
+
+        try {
+            if (status != null && !status.isEmpty()) {
+                sql.append(" AND status = ?");
+                parameters.add(status);
+            }
+            if (type != null && !type.isEmpty()) {
+                sql.append(" AND type = ?");
+                parameters.add(type);
+            }
+            if (location != null && !location.isEmpty()) {
+                sql.append(" AND location = ?");
+                parameters.add(location);
+            }
+            
+            sql.append(" ORDER BY request_date DESC");
+
+            System.out.println("DEBUG RequestDAO - Consulta con filtros para empleado: " + sql.toString());
+            System.out.println("DEBUG RequestDAO - Parámetros: " + parameters);
+
+            try (Connection conn = Conexion.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+                for (int i = 0; i < parameters.size(); i++) {
+                    pstmt.setObject(i + 1, parameters.get(i));
+                }
+
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    requests.add(mapRequest(rs));
+                }
+                
+                System.out.println("DEBUG RequestDAO - Solicitudes del empleado con filtros: " + requests.size());
+            }
+        } catch (SQLException e) {
+            System.out.println("ERROR RequestDAO - Error filtrando solicitudes del empleado: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return requests;
+    }
     
     private Request mapRequest(ResultSet rs) throws SQLException {
         Request request = new Request();

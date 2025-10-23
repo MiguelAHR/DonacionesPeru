@@ -22,6 +22,9 @@
                href="${pageContext.request.contextPath}/donations?action=list">
                 <i class="fas fa-gift me-2"></i>Gestionar Donaciones
             </a>
+            <a class="nav-link" href="${pageContext.request.contextPath}/employeeDonations">
+                <i class="fas fa-box me-2"></i>Gestión de Donaciones
+            </a>
             <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/requestManagement") ? "active" : ""%>" 
                href="${pageContext.request.contextPath}/requestManagement?action=list">
                 <i class="fas fa-list-alt me-2"></i>Gestión de Solicitudes
@@ -41,9 +44,6 @@
             <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/reports") ? "active" : ""%>" 
                href="${pageContext.request.contextPath}/reports">
                 <i class="fas fa-chart-bar me-2"></i>Mis Reportes
-            </a>
-            <a class="nav-link" href="${pageContext.request.contextPath}/employeeDonations">
-                <i class="fas fa-box me-2"></i>Gestión de Donaciones
             </a>
             <hr class="text-white-50">
             <a class="nav-link" href="${pageContext.request.contextPath}/logout">

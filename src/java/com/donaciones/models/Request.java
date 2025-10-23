@@ -156,4 +156,14 @@ public class Request {
             default: return "No definida";
         }
     }
+
+    public String getStatusBadgeColor() {
+        switch (status) {
+            case "pending": return "warning";
+            case "in_progress": return "info";
+            case "completed": return "success";
+            case "cancelled": return "danger";
+            default: return "secondary";
+        }
+    }
 }

@@ -60,14 +60,17 @@
         <servlet-name>LogoutServlet</servlet-name>
         <servlet-class>com.donaciones.servlets.LogoutServlet</servlet-class>
     </servlet>
-    <servlet>
-        <servlet-name>RequestManagementServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.RequestManagementServlet</servlet-class>
-    </servlet>
+    
     <servlet>
         <servlet-name>EmployeeDonationServlet</servlet-name>
         <servlet-class>com.donaciones.servlets.EmployeeDonationServlet</servlet-class>
     </servlet>
+    
+    <servlet>
+        <servlet-name>RequestManagementServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.RequestManagementServlet</servlet-class>
+    </servlet>
+    
     <!-- Servlet Mapeo -->
     <servlet-mapping>
         <servlet-name>ProfileServlet</servlet-name>
@@ -118,6 +121,7 @@
         <servlet-name>EmployeeDonationServlet</servlet-name>
         <url-pattern>/employeeDonations</url-pattern>
     </servlet-mapping>
+    
     <servlet-mapping>
         <servlet-name>RequestManagementServlet</servlet-name>
         <url-pattern>/requestManagement</url-pattern>
