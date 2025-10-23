@@ -45,6 +45,24 @@ public class UserDAO {
         return null;
     }
     
+    public User getUserById(int id) {
+        String sql = "SELECT * FROM usuarios WHERE id = ?";
+        
+        try (Connection conn = Conexion.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, id);
+            ResultSet rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                return mapUser(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM usuarios ORDER BY registration_date DESC";
@@ -89,6 +107,51 @@ public class UserDAO {
         }
     }
     
+    public boolean updateUser(User user) {
+        String sql = "UPDATE usuarios SET username=?, password=?, user_type=?, first_name=?, last_name=?, " +
+                     "email=?, phone=?, dni=?, birth_date=?, region=?, district=?, address=?, " +
+                     "active=?, notifications_enabled=? WHERE id=?";
+        
+        try (Connection conn = Conexion.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, user.getUsername());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getUserType());
+            pstmt.setString(4, user.getFirstName());
+            pstmt.setString(5, user.getLastName());
+            pstmt.setString(6, user.getEmail());
+            pstmt.setString(7, user.getPhone());
+            pstmt.setString(8, user.getDni());
+            pstmt.setDate(9, user.getBirthDate() != null ? new java.sql.Date(user.getBirthDate().getTime()) : null);
+            pstmt.setString(10, user.getRegion());
+            pstmt.setString(11, user.getDistrict());
+            pstmt.setString(12, user.getAddress());
+            pstmt.setBoolean(13, user.isActive());
+            pstmt.setBoolean(14, user.isNotificationsEnabled());
+            pstmt.setInt(15, user.getId());
+            
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public boolean deleteUser(int id) {
+        String sql = "DELETE FROM usuarios WHERE id = ?";
+        
+        try (Connection conn = Conexion.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, id);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
     public int getTotalUsers() {
         String sql = "SELECT COUNT(*) as total FROM usuarios";
         
@@ -123,7 +186,6 @@ public class UserDAO {
         return 0;
     }
 
-    // NUEVO MÉTODO: Obtener lista de empleados con nombres completos
     public List<String[]> getEmployeesWithNames() {
         List<String[]> employees = new ArrayList<>();
         String sql = "SELECT username, first_name, last_name FROM usuarios WHERE user_type = 'empleado' ORDER BY first_name, last_name";
@@ -147,7 +209,6 @@ public class UserDAO {
         return employees;
     }
 
-    // NUEVO MÉTODO: Obtener solo usernames de empleados
     public List<String> getEmployeeUsernames() {
         List<String> employees = new ArrayList<>();
         String sql = "SELECT username FROM usuarios WHERE user_type = 'empleado' ORDER BY username";

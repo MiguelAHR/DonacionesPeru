@@ -3,7 +3,7 @@ package com.donaciones.models;
 import java.util.Date;
 
 public class User {
-    private int id; // Nuevo campo
+    private int id;
     private String username;
     private String password;
     private String userType; 

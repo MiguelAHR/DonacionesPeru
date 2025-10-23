@@ -92,12 +92,31 @@ public class UserServlet extends HttpServlet {
             String[] donationTypes = request.getParameterValues("donationTypes");
             String comments = request.getParameter("comments");
             String notifications = request.getParameter("notifications");
+            String terms = request.getParameter("terms");
             
             // Validate required fields
             if (firstName == null || lastName == null || email == null || phone == null || 
                 dni == null || birthDateStr == null || region == null || district == null || 
-                address == null || donationTypes == null) {
+                address == null || donationTypes == null || terms == null) {
                 response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=missing");
+                return;
+            }
+            
+            // Validate DNI format
+            if (!dni.matches("\\d{8}")) {
+                response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=invalid_dni");
+                return;
+            }
+            
+            // Validate age (18+)
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date birthDate = sdf.parse(birthDateStr);
+            Date today = new Date();
+            long ageInMillis = today.getTime() - birthDate.getTime();
+            long age = ageInMillis / (1000L * 60 * 60 * 24 * 365);
+            
+            if (age < 18) {
+                response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=under_age");
                 return;
             }
             
@@ -120,14 +139,12 @@ public class UserServlet extends HttpServlet {
             donor.setNotificationsEnabled(notificationsEnabled);
             
             // Parse birth date
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date birthDate = sdf.parse(birthDateStr);
             donor.setBirthDate(birthDate);
             
             // Set donation types
             donor.setDonationTypes(Arrays.asList(donationTypes));
             
-            // Save donor
+            // Save donor using your DataManager as is
             DataManager.getInstance().addDonor(donor);
             
             response.sendRedirect(request.getContextPath() + "/users?action=newDonor&success=true");
@@ -135,6 +152,7 @@ public class UserServlet extends HttpServlet {
         } catch (ParseException e) {
             response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=date");
         } catch (Exception e) {
+            e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=general");
         }
     }
@@ -160,20 +178,40 @@ public class UserServlet extends HttpServlet {
             String needsDescription = request.getParameter("needsDescription");
             String dataConsent = request.getParameter("dataConsent");
             String notifications = request.getParameter("notifications");
+            String terms = request.getParameter("terms");
             
             // Validate required fields
             if (firstName == null || lastName == null || email == null || phone == null || 
                 dni == null || birthDateStr == null || familySizeStr == null || 
                 economicSituation == null || region == null || district == null || 
-                address == null || needs == null || needsDescription == null) {
+                address == null || needs == null || needsDescription == null || 
+                dataConsent == null || terms == null) {
                 response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=missing");
+                return;
+            }
+            
+            // Validate DNI format
+            if (!dni.matches("\\d{8}")) {
+                response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=invalid_dni");
+                return;
+            }
+            
+            // Validate age (18+)
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date birthDate = sdf.parse(birthDateStr);
+            Date today = new Date();
+            long ageInMillis = today.getTime() - birthDate.getTime();
+            long age = ageInMillis / (1000L * 60 * 60 * 24 * 365);
+            
+            if (age < 18) {
+                response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=under_age");
                 return;
             }
             
             // Create receiver
             Receiver receiver = new Receiver();
-            receiver.setUsername(dni); // Using DNI as username for simplicity
-            receiver.setPassword("receiver123"); // Default password
+            receiver.setUsername(dni);
+            receiver.setPassword("receiver123");
             receiver.setFirstName(firstName);
             receiver.setLastName(lastName);
             receiver.setEmail(email);
@@ -193,8 +231,6 @@ public class UserServlet extends HttpServlet {
             receiver.setNotificationsEnabled(notificationsEnabled);
             
             // Parse birth date
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date birthDate = sdf.parse(birthDateStr);
             receiver.setBirthDate(birthDate);
             
             // Parse family size
@@ -207,6 +243,8 @@ public class UserServlet extends HttpServlet {
             // Parse children count
             if (childrenStr != null && !childrenStr.isEmpty()) {
                 receiver.setChildren(Integer.parseInt(childrenStr));
+            } else {
+                receiver.setChildren(0);
             }
             
             // Set needs
@@ -214,7 +252,12 @@ public class UserServlet extends HttpServlet {
                 receiver.setNeeds(Arrays.asList(needs.split(",")));
             }
             
-            // Save receiver
+            // Set default values for receiver
+            receiver.setVerified(false);
+            receiver.setVerificationStatus("pending");
+            receiver.setReceivedDonations(0);
+            
+            // Save receiver using your DataManager as is
             DataManager.getInstance().addReceiver(receiver);
             
             response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&success=true");
@@ -224,6 +267,7 @@ public class UserServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=number");
         } catch (Exception e) {
+            e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=general");
         }
     }
@@ -238,8 +282,15 @@ public class UserServlet extends HttpServlet {
             return;
         }
         
-        // For now, redirect to new donor form
-        response.sendRedirect(request.getContextPath() + "/users?action=newDonor");
+        try {
+            // Get donors from DataManager
+            java.util.List<Donor> donors = DataManager.getInstance().getAllDonors();
+            request.setAttribute("donors", donors);
+            request.getRequestDispatcher("/WEB-INF/views/admin/donors_list.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/dashboard?error=loading_donors");
+        }
     }
     
     private void showReceivers(HttpServletRequest request, HttpServletResponse response)
@@ -252,8 +303,15 @@ public class UserServlet extends HttpServlet {
             return;
         }
         
-        // For now, redirect to new receiver form
-        response.sendRedirect(request.getContextPath() + "/users?action=newReceiver");
+        try {
+            // Get receivers from DataManager
+            java.util.List<Receiver> receivers = DataManager.getInstance().getAllReceivers();
+            request.setAttribute("receivers", receivers);
+            request.getRequestDispatcher("/WEB-INF/views/admin/receivers_list.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/dashboard?error=loading_receivers");
+        }
     }
     
     private void showAllUsers(HttpServletRequest request, HttpServletResponse response)
@@ -266,7 +324,14 @@ public class UserServlet extends HttpServlet {
             return;
         }
         
-        // For now, redirect to dashboard
-        response.sendRedirect(request.getContextPath() + "/dashboard");
+        try {
+            // Get all users from DataManager
+            java.util.List<com.donaciones.models.User> users = DataManager.getInstance().getAllUsers();
+            request.setAttribute("users", users);
+            request.getRequestDispatcher("/WEB-INF/views/admin/users_list.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/dashboard?error=loading_users");
+        }
     }
 }
