@@ -1,0 +1,421 @@
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page import="java.util.*"%>
+<%@page import="com.donaciones.models.*"%>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Beneficiario - Donaciones Perú</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .profile-header {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 60px 0;
+        }
+        .profile-card {
+            margin-top: -50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .nav-pills .nav-link {
+            border-radius: 50px;
+            padding: 12px 25px;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+        .nav-pills .nav-link.active {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+        }
+        .request-card {
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+        }
+        .request-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Mostrar mensajes -->
+    <div class="container mt-3">
+        <% if (request.getParameter("success") != null) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <% 
+                    String successType = request.getParameter("success");
+                    if ("request_created".equals(successType)) {
+                        out.print("¡Solicitud creada exitosamente!");
+                    } else {
+                        out.print("Operación completada exitosamente");
+                    }
+                %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } %>
+        <% if (request.getParameter("error") != null) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <% 
+                    String errorType = request.getParameter("error");
+                    if ("missing_fields".equals(errorType)) {
+                        out.print("Por favor, completa todos los campos requeridos");
+                    } else {
+                        out.print("Ha ocurrido un error. Intenta nuevamente");
+                    }
+                %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Header -->
+    <div class="profile-header">
+        <div class="container text-center">
+            <div class="mb-3">
+                <div class="bg-white text-warning rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                    <i class="fas fa-hand-holding-heart fa-3x"></i>
+                </div>
+            </div>
+            <h2 class="fw-bold">Bienvenido, <%= session.getAttribute("username") != null ? session.getAttribute("username") : "Beneficiario" %></h2>
+            <p class="mb-0">Beneficiario - Sistema de Donaciones Perú</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card profile-card border-0">
+            <div class="card-body p-4">
+                <ul class="nav nav-pills justify-content-center mb-4" id="profileTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="pill" href="#dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#requests">
+                            <i class="fas fa-hand-holding-heart me-2"></i>Mis Solicitudes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#profile">
+                            <i class="fas fa-user me-2"></i>Mi Perfil
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Contenedor -->
+                <div class="tab-content">
+                    <!-- Dashboard -->
+                    <div class="tab-pane fade show active" id="dashboard">
+                        <!-- Estadísticas -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card text-white bg-warning">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-hand-holding-heart fa-2x mb-2"></i>
+                                        <h3>${totalSolicitudes}</h3>
+                                        <p class="mb-0">Total Solicitudes</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-white bg-info">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-clock fa-2x mb-2"></i>
+                                        <h3>${solicitudesPendientes}</h3>
+                                        <p class="mb-0">Pendientes</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-white bg-success">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                        <h3>${solicitudesAprobadas}</h3>
+                                        <p class="mb-0">Aprobadas</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acciones Rápidas -->
+                        <div class="card border-0 bg-light mb-4">
+                            <div class="card-body text-center p-4">
+                                <h5 class="fw-bold mb-3">
+                                    <i class="fas fa-rocket me-2 text-warning"></i>
+                                    Acciones Rápidas
+                                </h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <button class="btn btn-warning btn-lg w-100 py-3" data-bs-toggle="modal" data-bs-target="#nuevaSolicitudModal">
+                                            <i class="fas fa-plus me-2"></i>Nueva Solicitud
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <a href="#requests" class="btn btn-outline-warning btn-lg w-100 py-3" onclick="switchToTab('requests')">
+                                            <i class="fas fa-history me-2"></i>Ver Historial
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mis Solicitudes -->
+                    <div class="tab-pane fade" id="requests">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h5 class="fw-bold mb-0">
+                                        <i class="fas fa-hand-holding-heart me-2 text-warning"></i>
+                                        Mis Solicitudes de Ayuda
+                                    </h5>
+                                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#nuevaSolicitudModal">
+                                        <i class="fas fa-plus me-2"></i>Nueva Solicitud
+                                    </button>
+                                </div>
+
+                                <% 
+                                List<Request> solicitudes = (List<Request>) request.getAttribute("solicitudes");
+                                if (solicitudes != null && !solicitudes.isEmpty()) {
+                                    for (Request solicitud : solicitudes) {
+                                        if (solicitud != null) {
+                                %>
+                                    <div class="card request-card border-0 shadow-sm mb-3">
+                                        <div class="card-body">
+                                            <div class="row align-items-center">
+                                                <div class="col-md-2 text-center">
+                                                    <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                        <i class="fas fa-hand-holding-heart"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6 class="fw-bold mb-1"><%= solicitud.getType() != null ? solicitud.getType() : "Sin tipo" %></h6>
+                                                    <p class="text-muted mb-1"><%= solicitud.getDescription() != null ? solicitud.getDescription() : "Sin descripción" %></p>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                                        <%= solicitud.getLocation() != null ? solicitud.getLocation() : "Sin ubicación" %>
+                                                        <% if (solicitud.getAssignedTo() != null && !solicitud.getAssignedTo().isEmpty()) { %>
+                                                            • <i class="fas fa-user me-1"></i>Asignado a: <%= solicitud.getAssignedTo() %>
+                                                        <% } %>
+                                                    </small>
+                                                </div>
+                                                <div class="col-md-2 text-center">
+                                                    <span class="fw-bold">Prioridad: 
+                                                        <span class="badge <%= 
+                                                            solicitud.getPriority() >= 4 ? "bg-danger" : 
+                                                            solicitud.getPriority() >= 3 ? "bg-warning" : "bg-info" %>">
+                                                            <%= solicitud.getPriority() %>
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                                <div class="col-md-2 text-center">
+                                                    <span class="status-badge <%= 
+                                                        "pending".equals(solicitud.getStatus()) ? "bg-warning" : 
+                                                        "completed".equals(solicitud.getStatus()) ? "bg-success" : 
+                                                        "in_progress".equals(solicitud.getStatus()) ? "bg-info" : "bg-secondary" %>">
+                                                        <%= solicitud.getStatus() != null ? solicitud.getStatus() : "Pendiente" %>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% 
+                                        }
+                                    }
+                                } else {
+                                %>
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-hand-holding-heart fa-4x text-muted mb-3"></i>
+                                        <h5 class="text-muted">No tienes solicitudes activas</h5>
+                                        <p class="text-muted">Si necesitas ayuda, puedes crear una solicitud</p>
+                                        <button class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#nuevaSolicitudModal">
+                                            <i class="fas fa-plus me-2"></i>Crear Primera Solicitud
+                                        </button>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Perfil -->
+                    <div class="tab-pane fade" id="profile">
+                        <div class="row">
+                            <div class="col-md-8 mx-auto">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body p-4">
+                                        <h5 class="fw-bold mb-4">
+                                            <i class="fas fa-id-card me-2 text-warning"></i>
+                                            Información del Beneficiario
+                                        </h5>
+                                        
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Usuario</label>
+                                                <div class="form-control bg-white">
+                                                    <%= session.getAttribute("username") != null ? session.getAttribute("username") : "N/A" %>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Tipo de Usuario</label>
+                                                <div class="form-control bg-white">
+                                                    <span class="badge bg-warning">Beneficiario</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Fecha de Registro</label>
+                                                <div class="form-control bg-white">
+                                                    <%= new java.text.SimpleDateFormat("dd/MM/yyyy").format(new java.util.Date()) %>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Estado</label>
+                                                <div class="form-control bg-white">
+                                                    <span class="badge bg-success">Activo</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="text-center mt-4">
+                                            <button class="btn btn-warning btn-lg px-4" data-bs-toggle="modal" data-bs-target="#nuevaSolicitudModal">
+                                                <i class="fas fa-plus me-2"></i>Nueva Solicitud
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout -->
+        <div class="text-center my-4">
+            <a href="${pageContext.request.contextPath}/logout" class="btn btn-outline-danger">
+                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal para nueva solicitud -->
+    <div class="modal fade" id="nuevaSolicitudModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus me-2"></i>Nueva Solicitud de Ayuda
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="${pageContext.request.contextPath}/requests" method="post">
+                    <input type="hidden" name="action" value="create">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Tipo de Ayuda Necesaria</label>
+                                    <select class="form-select" name="type" required>
+                                        <option value="">Seleccionar tipo...</option>
+                                        <option value="ropa">Ropa</option>
+                                        <option value="cuadernos">Cuadernos</option>
+                                        <option value="utiles_escolares">Útiles Escolares</option>
+                                        <option value="material_reciclable">Material Reciclable</option>
+                                        <option value="ropa_casi_nueva">Ropa Casi Nueva</option>
+                                        <option value="otros">Otros</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Nivel de Urgencia</label>
+                                    <select class="form-select" name="priority">
+                                        <option value="3">Media</option>
+                                        <option value="4">Alta</option>
+                                        <option value="5">Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción Detallada</label>
+                            <textarea class="form-control" name="description" rows="4" 
+                                    placeholder="Describe tu situación y necesidades específicas..." required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ubicación donde necesita la ayuda</label>
+                            <select class="form-select" name="location" required>
+                                <option value="">Seleccionar región...</option>
+                                <option value="Lima">Lima</option>
+                                <option value="Arequipa">Arequipa</option>
+                                <option value="Cusco">Cusco</option>
+                                <option value="Trujillo">Trujillo</option>
+                                <option value="Chiclayo">Chiclayo</option>
+                                <option value="Piura">Piura</option>
+                                <option value="Iquitos">Iquitos</option>
+                                <option value="Huancayo">Huancayo</option>
+                                <option value="Tacna">Tacna</option>
+                                <option value="Ayacucho">Ayacucho</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar Solicitud
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function switchToTab(tabName) {
+            const tabLink = document.querySelector(`a[href="#${tabName}"]`);
+            if (tabLink) {
+                const tab = new bootstrap.Tab(tabLink);
+                tab.show();
+            }
+        }
+
+        // Activar pestañas
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DEBUG - Página de beneficiario cargada");
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            
+            console.log("DEBUG - tabParam from URL:", tabParam);
+            
+            if (tabParam) {
+                const tabLink = document.querySelector(`a[href="#${tabParam}"]`);
+                if (tabLink) {
+                    console.log("DEBUG - Found tab link, activating:", tabParam);
+                    const tab = new bootstrap.Tab(tabLink);
+                    tab.show();
+                }
+            }
+            
+            // Auto-ocultar alertas después de 5 segundos
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

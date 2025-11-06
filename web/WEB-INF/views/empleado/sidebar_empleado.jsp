@@ -18,10 +18,6 @@
                href="${pageContext.request.contextPath}/dashboard">
                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
             </a>
-            <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/donations") && (request.getQueryString() == null || request.getQueryString().contains("action=list")) ? "active" : ""%>" 
-               href="${pageContext.request.contextPath}/donations?action=list">
-                <i class="fas fa-gift me-2"></i>Gestionar Donaciones
-            </a>
             <a class="nav-link" href="${pageContext.request.contextPath}/employeeDonations">
                 <i class="fas fa-box me-2"></i>Gestión de Donaciones
             </a>
@@ -29,14 +25,7 @@
                href="${pageContext.request.contextPath}/requestManagement?action=list">
                 <i class="fas fa-list-alt me-2"></i>Gestión de Solicitudes
             </a>
-            <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/users") && request.getQueryString() != null && request.getQueryString().contains("newDonor") ? "active" : ""%>" 
-               href="${pageContext.request.contextPath}/users?action=newDonor">
-                <i class="fas fa-hand-holding-heart me-2"></i>Registrar Donador
-            </a>
-            <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/users") && request.getQueryString() != null && request.getQueryString().contains("newReceiver") ? "active" : ""%>" 
-               href="${pageContext.request.contextPath}/users?action=newReceiver">
-                <i class="fas fa-hands-helping me-2"></i>Registrar Receptor
-            </a>
+            
             <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/donations") && request.getQueryString() != null && request.getQueryString().contains("action=new") ? "active" : ""%>" 
                href="${pageContext.request.contextPath}/donations?action=new">
                 <i class="fas fa-plus-circle me-2"></i>Nueva Donación

@@ -32,14 +32,6 @@
                 <i class="fas fa-users-cog me-2"></i>Gestión de Usuarios
             </a>
             
-            <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/users") && request.getQueryString() != null && request.getQueryString().contains("newDonor") ? "active" : ""%>" 
-               href="${pageContext.request.contextPath}/users?action=newDonor">
-                <i class="fas fa-hand-holding-heart me-2"></i>Registrar Donador
-            </a>
-            <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/users") && request.getQueryString() != null && request.getQueryString().contains("newReceiver") ? "active" : ""%>" 
-               href="${pageContext.request.contextPath}/users?action=newReceiver">
-                <i class="fas fa-hands-helping me-2"></i>Registrar Receptor
-            </a>
             <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/reports") ? "active" : ""%>" 
                href="${pageContext.request.contextPath}/reports">
                 <i class="fas fa-chart-bar me-2"></i>Reportes

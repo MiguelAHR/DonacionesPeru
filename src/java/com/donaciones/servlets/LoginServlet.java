@@ -14,20 +14,13 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Si ya está logueado, redirigir al dashboard
+        // Si ya está logueado, redirigir al dashboard apropiado
         HttpSession session = request.getSession(false);
         if (session != null && session.getAttribute("username") != null) {
             String userType = (String) session.getAttribute("userType");
             if (userType != null) {
-                switch (userType.toLowerCase()) {
-                    case "admin":
-                    case "empleado":
-                        response.sendRedirect(request.getContextPath() + "/dashboard");
-                        return;
-                    case "usuario":
-                        response.sendRedirect(request.getContextPath() + "/profile");
-                        return;
-                }
+                redirectByUserType(response, request.getContextPath(), userType);
+                return;
             }
         }
         
@@ -63,22 +56,8 @@ public class LoginServlet extends HttpServlet {
 
             System.out.println("DEBUG LoginServlet - Login exitoso. Usuario: " + username + ", Tipo: " + user.getUserType());
 
-            // REDIRECT en lugar de forward - ESTO ES CLAVE
-            String redirectPath;
-            switch (user.getUserType().toLowerCase()) {
-                case "admin":
-                case "empleado":
-                    redirectPath = "/dashboard";
-                    break;
-                case "usuario":
-                    redirectPath = "/profile";
-                    break;
-                default:
-                    redirectPath = "/dashboard";
-            }
-            
-            System.out.println("DEBUG LoginServlet - Redirigiendo a: " + redirectPath);
-            response.sendRedirect(request.getContextPath() + redirectPath);
+            // REDIRECT según el tipo de usuario
+            redirectByUserType(response, request.getContextPath(), user.getUserType());
             
         } else {
             // Authentication failed
@@ -88,6 +67,28 @@ public class LoginServlet extends HttpServlet {
         }
     }
 
-    // Elimina los métodos loadAdminDashboardData, loadEmployeeDashboardData y loadUserProfileData
-    // porque ahora eso lo manejan DashboardServlet y ProfileServlet
+    private void redirectByUserType(HttpServletResponse response, String contextPath, String userType) 
+            throws IOException {
+        String redirectPath;
+        switch (userType.toLowerCase()) {
+            case "admin":
+            case "empleado":
+                redirectPath = "/dashboard";
+                break;
+            case "usuario":
+                redirectPath = "/profile";
+                break;
+            case "donador":
+                redirectPath = "/donador/dashboard";
+                break;
+            case "receptor":
+                redirectPath = "/beneficiario/dashboard";
+                break;
+            default:
+                redirectPath = "/dashboard";
+        }
+        
+        System.out.println("DEBUG LoginServlet - Redirigiendo a: " + redirectPath);
+        response.sendRedirect(contextPath + redirectPath);
+    }
 }

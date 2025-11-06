@@ -30,7 +30,8 @@ public class SecurityFilter implements Filter {
                                    requestURI.endsWith(".css") ||
                                    requestURI.endsWith(".js") ||
                                    requestURI.endsWith(".png") ||
-                                   requestURI.endsWith(".jpg");
+                                   requestURI.endsWith(".jpg") ||
+                                   requestURI.contains("/public/");
 
         if (isPublicResource) {
             chain.doFilter(request, response);
@@ -46,11 +47,36 @@ public class SecurityFilter implements Filter {
             return;
         }
 
-        // Control de permisos por rol
-        String rol = (String) session.getAttribute("rol");
+        // Control de permisos por userType
+        String userType = (String) session.getAttribute("userType");
 
-        if (requestURI.contains("/admin/") && !"admin".equalsIgnoreCase(rol)) {
+        // Admin puede acceder a todo
+        if ("admin".equalsIgnoreCase(userType)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // Control de acceso por rutas
+        if (requestURI.contains("/admin/") && !"admin".equalsIgnoreCase(userType)) {
             System.out.println("DEBUG SecurityFilter - Acceso denegado a zona admin");
+            httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        if (requestURI.contains("/donador/") && !"donador".equalsIgnoreCase(userType)) {
+            System.out.println("DEBUG SecurityFilter - Acceso denegado a zona donador");
+            httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        if (requestURI.contains("/beneficiario/") && !"receptor".equalsIgnoreCase(userType)) {
+            System.out.println("DEBUG SecurityFilter - Acceso denegado a zona beneficiario");
+            httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        if (requestURI.contains("/empleado/") && !"empleado".equalsIgnoreCase(userType)) {
+            System.out.println("DEBUG SecurityFilter - Acceso denegado a zona empleado");
             httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
