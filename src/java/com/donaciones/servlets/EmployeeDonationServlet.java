@@ -1,6 +1,6 @@
 package com.donaciones.servlets;
 
-import com.donaciones.dao.DonationDAO;
+import com.donaciones.utils.DataManager;
 import com.donaciones.models.Donation;
 import java.io.IOException;
 import java.util.List;
@@ -12,11 +12,11 @@ import javax.servlet.http.HttpSession;
 
 public class EmployeeDonationServlet extends HttpServlet {
 
-    private DonationDAO donationDAO;
+    private DataManager dataManager;
 
     @Override
     public void init() throws ServletException {
-        donationDAO = new DonationDAO();
+        dataManager = DataManager.getInstance();
     }
 
     @Override
@@ -98,7 +98,7 @@ public class EmployeeDonationServlet extends HttpServlet {
     private void showMyDonations(HttpServletRequest request, HttpServletResponse response, String username)
             throws ServletException, IOException {
         
-        List<Donation> myDonations = donationDAO.getDonationsByEmployee(username);
+        List<Donation> myDonations = dataManager.getDonationsByEmployee(username);
         System.out.println("DEBUG EmployeeDonationServlet - Mostrando " + myDonations.size() + " donaciones para empleado: " + username);
         
         request.setAttribute("donations", myDonations);
@@ -111,7 +111,7 @@ public class EmployeeDonationServlet extends HttpServlet {
             throws ServletException, IOException {
         
         // Obtener donaciones disponibles (pendientes y sin asignar)
-        List<Donation> availableDonations = donationDAO.getAvailableDonations();
+        List<Donation> availableDonations = dataManager.getAvailableDonations();
         System.out.println("DEBUG EmployeeDonationServlet - Mostrando " + availableDonations.size() + " donaciones disponibles");
         
         request.setAttribute("donations", availableDonations);
@@ -131,7 +131,7 @@ public class EmployeeDonationServlet extends HttpServlet {
 
         try {
             int id = Integer.parseInt(idStr);
-            Donation donation = donationDAO.getDonation(id);
+            Donation donation = dataManager.getDonation(id);
             
             if (donation == null) {
                 response.sendRedirect(request.getContextPath() + "/employeeDonations?error=not_found");
@@ -155,7 +155,7 @@ public class EmployeeDonationServlet extends HttpServlet {
             int donationId = Integer.parseInt(request.getParameter("donationId"));
             System.out.println("DEBUG EmployeeDonationServlet - Asignando donación " + donationId + " a empleado: " + username);
             
-            boolean success = donationDAO.assignDonationToEmployee(donationId, username);
+            boolean success = dataManager.assignDonationToEmployee(donationId, username);
             
             if (success) {
                 System.out.println("DEBUG EmployeeDonationServlet - Donación asignada exitosamente");
@@ -190,13 +190,14 @@ public class EmployeeDonationServlet extends HttpServlet {
             }
 
             // Verificar que la donación pertenece a este empleado
-            Donation donation = donationDAO.getDonation(donationId);
+            Donation donation = dataManager.getDonation(donationId);
             if (donation == null || !username.equals(donation.getEmployeeUsername())) {
                 response.sendRedirect(request.getContextPath() + "/employeeDonations?error=no_permission");
                 return;
             }
 
-            boolean success = donationDAO.updateDonationStatusForEmployee(donationId, newStatus, username);
+            // CORREGIDO: Usar el método del DataManager
+            boolean success = dataManager.updateDonationStatusForEmployee(donationId, newStatus, username);
             
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/employeeDonations?success=status_updated");
@@ -218,13 +219,14 @@ public class EmployeeDonationServlet extends HttpServlet {
             System.out.println("DEBUG EmployeeDonationServlet - Completando entrega de donación " + donationId);
 
             // Verificar que la donación pertenece a este empleado
-            Donation donation = donationDAO.getDonation(donationId);
+            Donation donation = dataManager.getDonation(donationId);
             if (donation == null || !username.equals(donation.getEmployeeUsername())) {
                 response.sendRedirect(request.getContextPath() + "/employeeDonations?error=no_permission");
                 return;
             }
 
-            boolean success = donationDAO.updateDonationStatusForEmployee(donationId, "completed", username);
+            // CORREGIDO: Usar el método del DataManager
+            boolean success = dataManager.updateDonationStatusForEmployee(donationId, "completed", username);
             
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/employeeDonations?success=delivery_completed");

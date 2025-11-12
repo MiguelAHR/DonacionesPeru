@@ -1,6 +1,6 @@
 package com.donaciones.servlets;
 
-import com.donaciones.dao.RequestDAO;
+import com.donaciones.utils.DataManager;
 import com.donaciones.models.Request;
 import java.io.IOException;
 import java.util.List;
@@ -12,11 +12,11 @@ import javax.servlet.http.HttpSession;
 
 public class RequestManagementServlet extends HttpServlet {
 
-    private RequestDAO requestDAO;
+    private DataManager dataManager;
 
     @Override
     public void init() throws ServletException {
-        requestDAO = new RequestDAO();
+        dataManager = DataManager.getInstance();
     }
 
     @Override
@@ -141,9 +141,10 @@ public class RequestManagementServlet extends HttpServlet {
                                (locationFilter != null && !locationFilter.isEmpty());
 
             if (hasFilters) {
-                requests = requestDAO.getRequestsByFilters(statusFilter, typeFilter, locationFilter);
+                // CORREGIDO: Usar DataManager en lugar de requestDAO
+                requests = dataManager.getRequestsByFilters(statusFilter, typeFilter, locationFilter);
             } else {
-                requests = requestDAO.getAllRequests();
+                requests = dataManager.getAllRequests();
             }
 
             request.setAttribute("currentStatus", statusFilter);
@@ -157,9 +158,11 @@ public class RequestManagementServlet extends HttpServlet {
                                (locationFilter != null && !locationFilter.isEmpty());
 
             if (hasFilters) {
-                requests = requestDAO.getRequestsByEmployeeWithFilters(username, statusFilter, typeFilter, locationFilter);
+                // CORREGIDO: Usar DataManager en lugar de requestDAO
+                requests = dataManager.getRequestsByEmployeeWithFilters(username, statusFilter, typeFilter, locationFilter);
             } else {
-                requests = requestDAO.getRequestsByEmployee(username);
+                // CORREGIDO: Usar DataManager en lugar de requestDAO
+                requests = dataManager.getRequestsByEmployee(username);
             }
 
             request.setAttribute("currentStatus", statusFilter);
@@ -196,7 +199,7 @@ public class RequestManagementServlet extends HttpServlet {
 
         try {
             int id = Integer.parseInt(idStr);
-            Request req = requestDAO.getRequest(id);
+            Request req = dataManager.getRequest(id);
 
             if (req == null) {
                 response.sendRedirect(request.getContextPath() + "/requestManagement?error=not_found");
@@ -223,7 +226,7 @@ public class RequestManagementServlet extends HttpServlet {
 
         try {
             int id = Integer.parseInt(idStr);
-            Request req = requestDAO.getRequest(id);
+            Request req = dataManager.getRequest(id);
 
             if (req == null) {
                 response.sendRedirect(request.getContextPath() + "/requestManagement?error=not_found");
@@ -257,14 +260,14 @@ public class RequestManagementServlet extends HttpServlet {
 
             // Si es empleado, verificar que la solicitud le pertenece
             if ("empleado".equals(userType)) {
-                Request req = requestDAO.getRequest(requestId);
+                Request req = dataManager.getRequest(requestId);
                 if (req == null || !username.equals(req.getAssignedTo())) {
                     response.sendRedirect(request.getContextPath() + "/requestManagement?error=no_permission");
                     return;
                 }
             }
 
-            boolean success = requestDAO.updateRequestStatus(requestId, newStatus);
+            boolean success = dataManager.updateRequestStatus(requestId, newStatus);
 
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/requestManagement?success=status_updated");
@@ -289,7 +292,7 @@ public class RequestManagementServlet extends HttpServlet {
                 return;
             }
 
-            boolean success = requestDAO.assignRequestToEmployee(requestId, employeeUsername);
+            boolean success = dataManager.assignRequestToEmployee(requestId, employeeUsername);
 
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/requestManagement?success=employee_assigned");
@@ -307,7 +310,7 @@ public class RequestManagementServlet extends HttpServlet {
 
         try {
             int requestId = Integer.parseInt(request.getParameter("requestId"));
-            Request existingRequest = requestDAO.getRequest(requestId);
+            Request existingRequest = dataManager.getRequest(requestId);
 
             if (existingRequest == null) {
                 response.sendRedirect(request.getContextPath() + "/requestManagement?error=not_found");
@@ -325,7 +328,7 @@ public class RequestManagementServlet extends HttpServlet {
                 existingRequest.setStatus(newStatus);
             }
 
-            boolean success = requestDAO.updateRequest(existingRequest);
+            boolean success = dataManager.updateRequest(existingRequest);
 
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/requestManagement?success=request_updated");
@@ -350,7 +353,7 @@ public class RequestManagementServlet extends HttpServlet {
         try {
             int requestId = Integer.parseInt(request.getParameter("requestId"));
             
-            Request req = requestDAO.getRequest(requestId);
+            Request req = dataManager.getRequest(requestId);
             if (req == null) {
                 response.sendRedirect(request.getContextPath() + "/requestManagement?error=not_found");
                 return;
@@ -363,7 +366,7 @@ public class RequestManagementServlet extends HttpServlet {
             }
             
             // Asignar la solicitud al empleado
-            boolean success = requestDAO.assignRequestToEmployee(requestId, username);
+            boolean success = dataManager.assignRequestToEmployee(requestId, username);
             
             if (success) {
                 System.out.println("DEBUG RequestManagementServlet - Solicitud " + requestId + " asignada a " + username);
@@ -397,7 +400,7 @@ public class RequestManagementServlet extends HttpServlet {
             System.out.println("DEBUG RequestManagementServlet - ID a eliminar: " + requestId);
             
             // Verificar que la solicitud existe antes de intentar eliminar
-            Request req = requestDAO.getRequest(requestId);
+            Request req = dataManager.getRequest(requestId);
             if (req == null) {
                 System.out.println("ERROR RequestManagementServlet - Solicitud no encontrada: " + requestId);
                 response.sendRedirect(request.getContextPath() + "/requestManagement?error=not_found");
@@ -406,7 +409,7 @@ public class RequestManagementServlet extends HttpServlet {
             
             System.out.println("DEBUG RequestManagementServlet - Solicitud encontrada: " + req.getDescription());
             
-            boolean success = requestDAO.deleteRequest(requestId);
+            boolean success = dataManager.deleteRequest(requestId);
             
             if (success) {
                 System.out.println("DEBUG RequestManagementServlet - Eliminación exitosa para ID: " + requestId);

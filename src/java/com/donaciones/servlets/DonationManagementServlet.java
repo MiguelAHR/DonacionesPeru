@@ -1,6 +1,6 @@
 package com.donaciones.servlets;
 
-import com.donaciones.dao.DonationDAO;
+import com.donaciones.utils.DataManager;
 import com.donaciones.models.Donation;
 import java.io.IOException;
 import java.util.List;
@@ -12,11 +12,11 @@ import javax.servlet.http.HttpSession;
 
 public class DonationManagementServlet extends HttpServlet {
 
-    private DonationDAO donationDAO;
+    private DataManager dataManager;
 
     @Override
     public void init() throws ServletException {
-        donationDAO = new DonationDAO();
+        dataManager = DataManager.getInstance();
     }
 
     @Override
@@ -135,12 +135,12 @@ public class DonationManagementServlet extends HttpServlet {
                            (locationFilter != null && !locationFilter.isEmpty());
 
         if (hasFilters) {
-            // Usar método con filtros
-            donations = donationDAO.getDonationsByFilters(statusFilter, typeFilter, locationFilter);
+            // Usar método con filtros del DataManager
+            donations = dataManager.getDonationsByFilters(statusFilter, typeFilter, locationFilter);
             System.out.println("DEBUG DonationManagementServlet - Usando filtros, donaciones encontradas: " + donations.size());
         } else {
             // Obtener todas las donaciones
-            donations = donationDAO.getAllDonations();
+            donations = dataManager.getAllDonations();
             System.out.println("DEBUG DonationManagementServlet - Sin filtros, donaciones totales: " + donations.size());
         }
 
@@ -164,7 +164,7 @@ public class DonationManagementServlet extends HttpServlet {
 
         try {
             int id = Integer.parseInt(idStr);
-            Donation donation = donationDAO.getDonation(id);
+            Donation donation = dataManager.getDonation(id);
 
             if (donation == null) {
                 response.sendRedirect(request.getContextPath() + "/donationManagement?error=not_found");
@@ -191,7 +191,7 @@ public class DonationManagementServlet extends HttpServlet {
 
         try {
             int id = Integer.parseInt(idStr);
-            Donation donation = donationDAO.getDonation(id);
+            Donation donation = dataManager.getDonation(id);
 
             if (donation == null) {
                 response.sendRedirect(request.getContextPath() + "/donationManagement?error=not_found");
@@ -219,7 +219,7 @@ public class DonationManagementServlet extends HttpServlet {
                 return;
             }
 
-            boolean success = donationDAO.updateDonationStatus(donationId, newStatus);
+            boolean success = dataManager.updateDonationStatus(donationId, newStatus);
 
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/donationManagement?success=status_updated");
@@ -244,7 +244,7 @@ public class DonationManagementServlet extends HttpServlet {
                 return;
             }
 
-            boolean success = donationDAO.assignDonationToEmployee(donationId, employeeUsername);
+            boolean success = dataManager.assignDonationToEmployee(donationId, employeeUsername);
 
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/donationManagement?success=employee_assigned");
@@ -262,7 +262,7 @@ public class DonationManagementServlet extends HttpServlet {
 
         try {
             int donationId = Integer.parseInt(request.getParameter("donationId"));
-            Donation existingDonation = donationDAO.getDonation(donationId);
+            Donation existingDonation = dataManager.getDonation(donationId);
 
             if (existingDonation == null) {
                 response.sendRedirect(request.getContextPath() + "/donationManagement?error=not_found");
@@ -281,7 +281,7 @@ public class DonationManagementServlet extends HttpServlet {
                 existingDonation.setStatus(newStatus);
             }
 
-            boolean success = donationDAO.updateDonation(existingDonation);
+            boolean success = dataManager.updateDonation(existingDonation);
 
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/donationManagement?success=donation_updated");
@@ -314,7 +314,7 @@ public class DonationManagementServlet extends HttpServlet {
             System.out.println("DEBUG DonationManagementServlet - ID a eliminar: " + donationId);
             
             // Verificar que la donación existe antes de intentar eliminar
-            Donation donation = donationDAO.getDonation(donationId);
+            Donation donation = dataManager.getDonation(donationId);
             if (donation == null) {
                 System.out.println("ERROR DonationManagementServlet - Donación no encontrada: " + donationId);
                 response.sendRedirect(request.getContextPath() + "/donationManagement?error=not_found");
@@ -323,7 +323,7 @@ public class DonationManagementServlet extends HttpServlet {
             
             System.out.println("DEBUG DonationManagementServlet - Donación encontrada: " + donation.getDescription());
             
-            boolean success = donationDAO.deleteDonation(donationId);
+            boolean success = dataManager.deleteDonation(donationId);
             
             if (success) {
                 System.out.println("DEBUG DonationManagementServlet - Eliminación exitosa para ID: " + donationId);

@@ -9,15 +9,15 @@ import java.util.List;
 public class UserDAO {
     
     public User authenticate(String username, String password) {
-        String sql = "SELECT * FROM usuarios WHERE username = ? AND password = ? AND active = TRUE";
+        String sql = "CALL sp_authenticate_user(?, ?)";
         
         try (Connection conn = Conexion.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             CallableStatement cstmt = conn.prepareCall(sql)) {
             
-            pstmt.setString(1, username);
-            pstmt.setString(2, password);
+            cstmt.setString(1, username);
+            cstmt.setString(2, password);
             
-            ResultSet rs = pstmt.executeQuery();
+            ResultSet rs = cstmt.executeQuery();
             if (rs.next()) {
                 return mapUser(rs);
             }
@@ -28,13 +28,13 @@ public class UserDAO {
     }
     
     public User getUserByUsername(String username) {
-        String sql = "SELECT * FROM usuarios WHERE username = ?";
+        String sql = "CALL sp_get_user_by_username(?)";
         
         try (Connection conn = Conexion.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             CallableStatement cstmt = conn.prepareCall(sql)) {
             
-            pstmt.setString(1, username);
-            ResultSet rs = pstmt.executeQuery();
+            cstmt.setString(1, username);
+            ResultSet rs = cstmt.executeQuery();
             
             if (rs.next()) {
                 return mapUser(rs);
@@ -46,13 +46,13 @@ public class UserDAO {
     }
     
     public User getUserById(int id) {
-        String sql = "SELECT * FROM usuarios WHERE id = ?";
+        String sql = "CALL sp_get_user_by_id(?)";
         
         try (Connection conn = Conexion.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             CallableStatement cstmt = conn.prepareCall(sql)) {
             
-            pstmt.setInt(1, id);
-            ResultSet rs = pstmt.executeQuery();
+            cstmt.setInt(1, id);
+            ResultSet rs = cstmt.executeQuery();
             
             if (rs.next()) {
                 return mapUser(rs);
@@ -65,11 +65,11 @@ public class UserDAO {
     
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT * FROM usuarios ORDER BY registration_date DESC";
+        String sql = "CALL sp_get_all_users()";
         
         try (Connection conn = Conexion.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             CallableStatement cstmt = conn.prepareCall(sql);
+             ResultSet rs = cstmt.executeQuery()) {
             
             while (rs.next()) {
                 users.add(mapUser(rs));
@@ -81,26 +81,26 @@ public class UserDAO {
     }
     
     public boolean addUser(User user) {
-        String sql = "INSERT INTO usuarios (username, password, user_type, first_name, last_name, email, phone, dni, birth_date, region, district, address, notifications_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "CALL sp_insert_user(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = Conexion.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             CallableStatement cstmt = conn.prepareCall(sql)) {
             
-            pstmt.setString(1, user.getUsername());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getUserType());
-            pstmt.setString(4, user.getFirstName());
-            pstmt.setString(5, user.getLastName());
-            pstmt.setString(6, user.getEmail());
-            pstmt.setString(7, user.getPhone());
-            pstmt.setString(8, user.getDni());
-            pstmt.setDate(9, user.getBirthDate() != null ? new java.sql.Date(user.getBirthDate().getTime()) : null);
-            pstmt.setString(10, user.getRegion());
-            pstmt.setString(11, user.getDistrict());
-            pstmt.setString(12, user.getAddress());
-            pstmt.setBoolean(13, user.isNotificationsEnabled());
+            cstmt.setString(1, user.getUsername());
+            cstmt.setString(2, user.getPassword());
+            cstmt.setString(3, user.getUserType());
+            cstmt.setString(4, user.getFirstName());
+            cstmt.setString(5, user.getLastName());
+            cstmt.setString(6, user.getEmail());
+            cstmt.setString(7, user.getPhone());
+            cstmt.setString(8, user.getDni());
+            cstmt.setDate(9, user.getBirthDate() != null ? new java.sql.Date(user.getBirthDate().getTime()) : null);
+            cstmt.setString(10, user.getRegion());
+            cstmt.setString(11, user.getDistrict());
+            cstmt.setString(12, user.getAddress());
+            cstmt.setBoolean(13, user.isNotificationsEnabled());
             
-            return pstmt.executeUpdate() > 0;
+            return cstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -108,30 +108,28 @@ public class UserDAO {
     }
     
     public boolean updateUser(User user) {
-        String sql = "UPDATE usuarios SET username=?, password=?, user_type=?, first_name=?, last_name=?, " +
-                     "email=?, phone=?, dni=?, birth_date=?, region=?, district=?, address=?, " +
-                     "active=?, notifications_enabled=? WHERE id=?";
+        String sql = "CALL sp_update_user(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = Conexion.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             CallableStatement cstmt = conn.prepareCall(sql)) {
             
-            pstmt.setString(1, user.getUsername());
-            pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getUserType());
-            pstmt.setString(4, user.getFirstName());
-            pstmt.setString(5, user.getLastName());
-            pstmt.setString(6, user.getEmail());
-            pstmt.setString(7, user.getPhone());
-            pstmt.setString(8, user.getDni());
-            pstmt.setDate(9, user.getBirthDate() != null ? new java.sql.Date(user.getBirthDate().getTime()) : null);
-            pstmt.setString(10, user.getRegion());
-            pstmt.setString(11, user.getDistrict());
-            pstmt.setString(12, user.getAddress());
-            pstmt.setBoolean(13, user.isActive());
-            pstmt.setBoolean(14, user.isNotificationsEnabled());
-            pstmt.setInt(15, user.getId());
+            cstmt.setInt(1, user.getId());
+            cstmt.setString(2, user.getUsername());
+            cstmt.setString(3, user.getPassword());
+            cstmt.setString(4, user.getUserType());
+            cstmt.setString(5, user.getFirstName());
+            cstmt.setString(6, user.getLastName());
+            cstmt.setString(7, user.getEmail());
+            cstmt.setString(8, user.getPhone());
+            cstmt.setString(9, user.getDni());
+            cstmt.setDate(10, user.getBirthDate() != null ? new java.sql.Date(user.getBirthDate().getTime()) : null);
+            cstmt.setString(11, user.getRegion());
+            cstmt.setString(12, user.getDistrict());
+            cstmt.setString(13, user.getAddress());
+            cstmt.setBoolean(14, user.isActive());
+            cstmt.setBoolean(15, user.isNotificationsEnabled());
             
-            return pstmt.executeUpdate() > 0;
+            return cstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -139,60 +137,44 @@ public class UserDAO {
     }
     
     public boolean deleteUser(int id) {
-        String sql = "DELETE FROM usuarios WHERE id = ?";
+        String sql = "CALL sp_delete_user(?)";
         
         try (Connection conn = Conexion.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             CallableStatement cstmt = conn.prepareCall(sql)) {
             
-            pstmt.setInt(1, id);
-            return pstmt.executeUpdate() > 0;
+            cstmt.setInt(1, id);
+            return cstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
     
-    public int getTotalUsers() {
-        String sql = "SELECT COUNT(*) as total FROM usuarios";
+    public List<String> getEmployeeUsernames() {
+        List<String> employees = new ArrayList<>();
+        String sql = "CALL sp_get_employee_usernames()";
         
         try (Connection conn = Conexion.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             CallableStatement cstmt = conn.prepareCall(sql);
+             ResultSet rs = cstmt.executeQuery()) {
             
-            if (rs.next()) {
-                return rs.getInt("total");
+            while (rs.next()) {
+                employees.add(rs.getString("username"));
             }
+            
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return 0;
-    }
-    
-    public int getUsersByType(String userType) {
-        String sql = "SELECT COUNT(*) as total FROM usuarios WHERE user_type = ?";
-        
-        try (Connection conn = Conexion.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setString(1, userType);
-            ResultSet rs = pstmt.executeQuery();
-            
-            if (rs.next()) {
-                return rs.getInt("total");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
+        return employees;
     }
 
     public List<String[]> getEmployeesWithNames() {
         List<String[]> employees = new ArrayList<>();
-        String sql = "SELECT username, first_name, last_name FROM usuarios WHERE user_type = 'empleado' ORDER BY first_name, last_name";
+        String sql = "CALL sp_get_employees_with_names()";
         
         try (Connection conn = Conexion.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             CallableStatement cstmt = conn.prepareCall(sql);
+             ResultSet rs = cstmt.executeQuery()) {
             
             while (rs.next()) {
                 String[] employee = new String[3];
@@ -203,31 +185,6 @@ public class UserDAO {
             }
             
         } catch (SQLException e) {
-            System.out.println("ERROR UserDAO - Error obteniendo empleados con nombres: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return employees;
-    }
-
-    public List<String> getEmployeeUsernames() {
-        List<String> employees = new ArrayList<>();
-        String sql = "SELECT username FROM usuarios WHERE user_type = 'empleado' ORDER BY username";
-        
-        System.out.println("DEBUG UserDAO - Obteniendo lista de empleados");
-
-        try (Connection conn = Conexion.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
-            int count = 0;
-            while (rs.next()) {
-                employees.add(rs.getString("username"));
-                count++;
-            }
-            System.out.println("DEBUG UserDAO - Empleados encontrados: " + count);
-            
-        } catch (SQLException e) {
-            System.out.println("ERROR UserDAO - Error obteniendo empleados: " + e.getMessage());
             e.printStackTrace();
         }
         return employees;
