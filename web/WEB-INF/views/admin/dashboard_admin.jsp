@@ -69,7 +69,7 @@
 
                     <!-- Estadisticas -->
                     <div class="row g-4 mb-5">
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="card stat-card h-100">
                                 <div class="card-body text-center">
                                     <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
@@ -83,7 +83,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="card stat-card h-100">
                                 <div class="card-body text-center">
                                     <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
@@ -97,7 +97,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="card stat-card h-100">
                                 <div class="card-body text-center">
                                     <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
@@ -111,35 +111,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-2">
-                            <div class="card stat-card h-100">
-                                <div class="card-body text-center">
-                                    <div class="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                        <i class="fas fa-hand-holding-heart fa-lg"></i>
-                                    </div>
-                                    <h3 class="fw-bold text-info">
-                                        <%= request.getAttribute("totalDonors") != null ? request.getAttribute("totalDonors") : "0" %>
-                                    </h3>
-                                    <p class="text-muted mb-0">Donadores</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-2">
-                            <div class="card stat-card h-100">
-                                <div class="card-body text-center">
-                                    <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                        <i class="fas fa-hands-helping fa-lg"></i>
-                                    </div>
-                                    <h3 class="fw-bold text-danger">
-                                        <%= request.getAttribute("totalReceivers") != null ? request.getAttribute("totalReceivers") : "0" %>
-                                    </h3>
-                                    <p class="text-muted mb-0">Receptores</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="card stat-card h-100">
                                 <div class="card-body text-center">
                                     <div class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
