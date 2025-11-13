@@ -80,6 +80,10 @@
         <servlet-name>UserCRUDServlet</servlet-name>
         <servlet-class>com.donaciones.servlets.UserCRUDServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>AdminCatalogServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.AdminCatalogServlet</servlet-class>
+    </servlet>
 
     <!-- ======================================================= -->
     <!-- NUEVO: Servlet para Gestión de Roles y Responsabilidades -->
@@ -152,7 +156,6 @@
         <url-pattern>/admin/users</url-pattern>
     </servlet-mapping>
 
-    <!-- NUEVO: Mapeo de RolesServlet -->
     <servlet-mapping>
         <servlet-name>RolesServlet</servlet-name>
         <url-pattern>/roles</url-pattern>
@@ -222,5 +225,10 @@
         <extension>docx</extension>
         <mime-type>application/vnd.openxmlformats-officedocument.wordprocessingml.document</mime-type>
     </mime-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>AdminCatalogServlet</servlet-name>
+        <url-pattern>/adminCatalog</url-pattern>
+    </servlet-mapping>
 
 </web-app>

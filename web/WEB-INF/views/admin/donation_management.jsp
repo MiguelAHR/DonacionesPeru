@@ -323,6 +323,15 @@
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                         
+                                                        <!-- NUEVO BOTÓN: Agregar al Catálogo -->
+                                                        <% if ("completed".equals(donation.getStatus())) { %>
+                                                        <button class="btn btn-outline-success" 
+                                                                onclick="addToCatalog(<%= donation.getId() %>)"
+                                                                title="Agregar al Catálogo">
+                                                            <i class="fas fa-cart-plus"></i>
+                                                        </button>
+                                                        <% } %>
+                                                        
                                                         <button class="btn btn-outline-info" 
                                                                 onclick="showDetails(<%= donation.getId() %>)"
                                                                 title="Ver detalles">
@@ -505,7 +514,7 @@
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            // Funciones JavaScript se mantienen igual
+            // Funciones JavaScript existentes...
             function showAssignModal(donationId, currentEmployee) {
                 console.log("DEBUG - Asignar modal para donación:", donationId, "Empleado actual:", currentEmployee);
                 document.getElementById('assignDonationId').value = donationId;
@@ -576,6 +585,13 @@
                 const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
                 deleteModal.show();
             }
+
+            // NUEVA FUNCIÓN: Agregar al Catálogo
+            function addToCatalog(donationId) {
+                if (confirm('¿Estás seguro de que deseas agregar esta donación al catálogo?')) {
+                    window.location.href = 'donationManagement?action=addToCatalog&donationId=' + donationId;
+                }
+            }
         </script>
     </body>
 </html>
@@ -645,7 +661,7 @@
         }
     }
 
-    // Método para obtener mensajes de éxito
+    // Método para obtener mensajes de éxito (ACTUALIZADO)
     private String getSuccessMessage(String successType) {
         switch (successType) {
             case "status_updated":
@@ -656,12 +672,14 @@
                 return "¡Donación actualizada exitosamente!";
             case "donation_deleted":
                 return "¡Donación eliminada exitosamente!";
+            case "added_to_catalog":
+                return "¡Donación agregada al catálogo exitosamente!";
             default:
                 return "Operación completada exitosamente";
         }
     }
 
-    // Método para obtener mensajes de error
+    // Método para obtener mensajes de error (ACTUALIZADO)
     private String getErrorMessage(String errorType) {
         switch (errorType) {
             case "invalid_id":
@@ -684,6 +702,12 @@
                 return "Error interno del servidor";
             case "invalid_employee":
                 return "Nombre de empleado inválido";
+            case "not_completed":
+                return "Solo las donaciones completadas pueden agregarse al catálogo";
+            case "already_in_catalog":
+                return "Esta donación ya está en el catálogo";
+            case "catalog_failed":
+                return "Error al agregar la donación al catálogo";
             default:
                 return "Ha ocurrido un error. Intenta nuevamente";
         }

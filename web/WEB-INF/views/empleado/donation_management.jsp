@@ -199,7 +199,7 @@
                                 <%
                                     DonationDAO donationDAO = new DonationDAO();
                                     String username = (String) session.getAttribute("username");
-                                    List<Donation> myDonations = (List<Donation>) request.getAttribute("myDonations");
+                                    List<Donation> myDonations = (List<Donation>) request.getAttribute("donations");
                                     if (myDonations == null) {
                                         myDonations = donationDAO.getDonationsByEmployee(username);
                                     }
@@ -646,7 +646,7 @@
         }
 
         function completeDelivery(donationId) {
-            if (confirm('¿Marcar esta donación como completada?\n\nEsta acción no se puede deshacer.')) {
+            if (confirm('¿Marcar esta donación como completada?\n\n✅ La donación se agregará automáticamente al catálogo\n\nEsta acción no se puede deshacer.')) {
                 // Crear un formulario dinámico para completar la entrega
                 const form = document.createElement('form');
                 form.method = 'post';
@@ -749,7 +749,7 @@
             case "status_updated":
                 return "¡Estado actualizado exitosamente!";
             case "delivery_completed":
-                return "¡Entrega completada exitosamente!";
+                return "¡Entrega completada exitosamente! La donación ha sido agregada al catálogo.";
             default:
                 return "Operación completada exitosamente";
         }

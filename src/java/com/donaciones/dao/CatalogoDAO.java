@@ -130,6 +130,21 @@ public class CatalogoDAO {
         }
     }
     
+    // NUEVO MÉTODO PARA ELIMINAR PERMANENTEMENTE
+    public boolean deleteCatalogoItem(int id) {
+        String sql = "CALL sp_delete_catalogo_item(?)";
+        
+        try (Connection conn = Conexion.getConnection();
+             CallableStatement cstmt = conn.prepareCall(sql)) {
+            
+            cstmt.setInt(1, id);
+            return cstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
     private Catalogo mapCatalogo(ResultSet rs) throws SQLException {
         Catalogo catalogo = new Catalogo();
         catalogo.setId(rs.getInt("id"));

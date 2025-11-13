@@ -55,6 +55,141 @@ public class DataManager {
         return instance;
     }
 
+    // ========== MÉTODOS ADICIONALES PARA CATÁLOGO ==========
+    /**
+     * Verifica si un usuario es administrador
+     */
+    public boolean isUserAdmin(User user) {
+        return user != null && "admin".equals(user.getUserType());
+    }
+
+    /**
+     * Obtiene items del catálogo por estado
+     */
+    public List<Catalogo> getCatalogItemsByStatus(String estado) {
+        try {
+            List<Catalogo> allItems = getAllCatalogItems();
+            return allItems.stream()
+                    .filter(item -> estado.equals(item.getEstado()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error obteniendo items por estado: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Obtiene items del catálogo por tipo
+     */
+    public List<Catalogo> getCatalogItemsByType(String tipo) {
+        try {
+            List<Catalogo> allItems = getAllCatalogItems();
+            return allItems.stream()
+                    .filter(item -> tipo.equals(item.getTipo()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error obteniendo items por tipo: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Obtiene items del catálogo con filtros combinados
+     */
+    public List<Catalogo> getCatalogItemsWithFilters(String estado, String tipo) {
+        try {
+            List<Catalogo> allItems = getAllCatalogItems();
+            return allItems.stream()
+                    .filter(item -> (estado == null || estado.isEmpty() || estado.equals(item.getEstado())))
+                    .filter(item -> (tipo == null || tipo.isEmpty() || tipo.equals(item.getTipo())))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error obteniendo items con filtros: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    // ========== MÉTODOS EXISTENTES DEL CATÁLOGO ==========
+    public List<Catalogo> getAllCatalogItems() {
+        return catalogoDAO.getAllCatalogItems();
+    }
+
+    public List<Catalogo> getAvailableCatalogItems() {
+        return catalogoDAO.getAvailableItems();
+    }
+
+    public Catalogo getCatalogoItem(int id) {
+        return catalogoDAO.getCatalogoItem(id);
+    }
+
+    public boolean addCatalogoItem(Catalogo catalogo) {
+        return catalogoDAO.addCatalogoItem(catalogo);
+    }
+
+    public boolean updateCatalogoItem(Catalogo catalogo) {
+        return catalogoDAO.updateCatalogoItem(catalogo);
+    }
+
+    public boolean updateCatalogoItemStatus(int id, String estado) {
+        return catalogoDAO.updateItemStatus(id, estado);
+    }
+
+    public boolean deleteCatalogoItem(int itemId) {
+        return catalogoDAO.deleteCatalogoItem(itemId);
+    }
+
+    public List<Catalogo> searchCatalogItems(String tipo, String ubicacion, String estado) {
+        try {
+            List<Catalogo> allItems = getAllCatalogItems();
+            return allItems.stream()
+                    .filter(item -> (tipo == null || tipo.isEmpty() || tipo.equals(item.getTipo())))
+                    .filter(item -> (ubicacion == null || ubicacion.isEmpty() || ubicacion.equals(item.getUbicacion())))
+                    .filter(item -> (estado == null || estado.isEmpty() || estado.equals(item.getEstado())))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error buscando items del catálogo: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    public boolean itemExistsForDonation(int donationId) {
+        try {
+            List<Catalogo> items = getAllCatalogItems();
+            return items.stream()
+                    .anyMatch(item -> item.getDonacionId() == donationId);
+        } catch (Exception e) {
+            System.err.println("Error verificando existencia de item: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean moveCompletedDonationToCatalog(int donationId) {
+        try {
+            Donation donation = donationDAO.getDonation(donationId);
+            if (donation != null && "completed".equals(donation.getStatus())) {
+                if (!itemExistsForDonation(donationId)) {
+                    Catalogo catalogo = new Catalogo();
+                    catalogo.setDonacionId(donationId);
+                    catalogo.setTitulo(donation.getDescription());
+                    catalogo.setDescripcion(donation.getDescription());
+                    catalogo.setTipo(donation.getType());
+                    catalogo.setCantidad(donation.getQuantity());
+                    catalogo.setCondicion(donation.getCondition());
+                    catalogo.setUbicacion(donation.getLocation());
+                    catalogo.setDonante(donation.getDonorUsername());
+                    catalogo.setEstado("disponible");
+
+                    return catalogoDAO.addCatalogoItem(catalogo);
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error moviendo donación al catálogo: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // ========== MÉTODOS EXISTENTES (MANTENER TODOS) ==========
     // User operations
     public User authenticateUser(String username, String password) {
         return userDAO.authenticate(username, password);
@@ -83,9 +218,30 @@ public class DataManager {
     // Donation operations
     public boolean addDonation(Donation donation) {
         try {
-            return donationDAO.addDonation(donation);
+            System.out.println("🔍 DEBUG DataManager - addDonation INICIADO");
+            System.out.println("🔍 DEBUG - Donación recibida en DataManager:");
+            System.out.println("🔍 DEBUG - Tipo: " + donation.getType());
+            System.out.println("🔍 DEBUG - Descripción: " + donation.getDescription());
+            System.out.println("🔍 DEBUG - Cantidad: " + donation.getQuantity());
+            System.out.println("🔍 DEBUG - Condición: " + donation.getCondition());
+            System.out.println("🔍 DEBUG - Ubicación: " + donation.getLocation());
+            System.out.println("🔍 DEBUG - Donante: " + donation.getDonorUsername());
+            System.out.println("🔍 DEBUG - Estado: " + donation.getStatus());
+            System.out.println("🔍 DEBUG - Dirección: " + donation.getAddress());
+
+            if (donationDAO == null) {
+                System.out.println("❌ ERROR DataManager - donationDAO es NULL");
+                return false;
+            }
+
+            System.out.println("🔍 DEBUG - Llamando a donationDAO.addDonation()");
+            boolean result = donationDAO.addDonation(donation);
+            System.out.println("🔍 DEBUG - Resultado de donationDAO.addDonation(): " + result);
+
+            return result;
+
         } catch (Exception e) {
-            System.out.println("ERROR DataManager - Error en addDonation: " + e.getMessage());
+            System.out.println("💥 ERROR DataManager - Excepción en addDonation: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -144,10 +300,8 @@ public class DataManager {
         return requestDAO.getRequestsByUser(username);
     }
 
-    // MÉTODO CORREGIDO: Implementación alternativa
     public List<Request> getRequestsByEmployee(String employeeUsername) {
         try {
-            // Implementación alternativa usando filtros en memoria
             return getAllRequests().stream()
                     .filter(r -> employeeUsername.equals(r.getAssignedTo()))
                     .collect(Collectors.toList());
@@ -166,9 +320,8 @@ public class DataManager {
     }
 
     public List<Request> getRequestsByStatus(String status) {
-        // Implementación alternativa
         try {
-            return getAllRequests().stream() 
+            return getAllRequests().stream()
                     .filter(r -> status.equals(r.getStatus()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -178,7 +331,6 @@ public class DataManager {
     }
 
     public List<Request> getAvailableRequests() {
-        // Implementación alternativa - solicitudes sin asignar
         try {
             return getAllRequests().stream()
                     .filter(r -> r.getAssignedTo() == null || r.getAssignedTo().isEmpty())
@@ -203,7 +355,6 @@ public class DataManager {
 
     // Donor operations
     public boolean addDonor(Donor donor) {
-        // Primero creamos el usuario
         User user = new User();
         user.setUsername(donor.getUsername());
         user.setPassword(donor.getPassword());
@@ -220,7 +371,6 @@ public class DataManager {
         user.setNotificationsEnabled(donor.isNotificationsEnabled());
 
         if (userDAO.addUser(user)) {
-            // Luego agregamos el donador
             return donorDAO.addDonor(donor);
         }
         return false;
@@ -234,10 +384,8 @@ public class DataManager {
         return donorDAO.getDonorByUserId(userId);
     }
 
-    // MÉTODO CORREGIDO: Implementación alternativa
     public Donor getDonorByUsername(String username) {
         try {
-            // Implementación alternativa
             return getAllDonors().stream()
                     .filter(d -> username.equals(d.getUsername()))
                     .findFirst()
@@ -258,7 +406,6 @@ public class DataManager {
 
     // Receiver operations
     public boolean addReceiver(Receiver receiver) {
-        // Primero creamos el usuario
         User user = new User();
         user.setUsername(receiver.getUsername());
         user.setPassword(receiver.getPassword());
@@ -275,7 +422,6 @@ public class DataManager {
         user.setNotificationsEnabled(receiver.isNotificationsEnabled());
 
         if (userDAO.addUser(user)) {
-            // Luego agregamos el receptor
             return receiverDAO.addReceiver(receiver);
         }
         return false;
@@ -289,10 +435,8 @@ public class DataManager {
         return receiverDAO.getReceiverByUserId(userId);
     }
 
-    // MÉTODO CORREGIDO: Implementación alternativa
     public Receiver getReceiverByUsername(String username) {
         try {
-            // Implementación alternativa
             return getAllReceivers().stream()
                     .filter(r -> username.equals(r.getUsername()))
                     .findFirst()
@@ -334,87 +478,6 @@ public class DataManager {
 
     public boolean deleteRole(int id) {
         return roleDAO.deleteRole(id);
-    }
-
-    // Catalogo operations
-    public List<Catalogo> getAllCatalogItems() {
-        return catalogoDAO.getAllCatalogItems();
-    }
-
-    public List<Catalogo> getAvailableCatalogItems() {
-        return catalogoDAO.getAvailableItems();
-    }
-
-    public Catalogo getCatalogoItem(int id) {
-        return catalogoDAO.getCatalogoItem(id);
-    }
-
-    public boolean addCatalogoItem(Catalogo catalogo) {
-        return catalogoDAO.addCatalogoItem(catalogo);
-    }
-
-    public boolean updateCatalogoItem(Catalogo catalogo) {
-        return catalogoDAO.updateCatalogoItem(catalogo);
-    }
-
-    public boolean updateCatalogoItemStatus(int id, String estado) {
-        return catalogoDAO.updateItemStatus(id, estado);
-    }
-
-    // MÉTODO CORREGIDO: Implementación alternativa
-    public List<Catalogo> searchCatalogItems(String tipo, String ubicacion, String estado) {
-        try {
-            // Implementación alternativa usando filtros en memoria
-            List<Catalogo> allItems = getAllCatalogItems();
-            return allItems.stream()
-                    .filter(item -> (tipo == null || tipo.isEmpty() || tipo.equals(item.getTipo())))
-                    .filter(item -> (ubicacion == null || ubicacion.isEmpty() || ubicacion.equals(item.getUbicacion())))
-                    .filter(item -> (estado == null || estado.isEmpty() || estado.equals(item.getEstado())))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            System.err.println("Error buscando items del catálogo: " + e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-
-    // NUEVO MÉTODO: Verificar si existe un item en el catálogo para una donación
-    public boolean itemExistsForDonation(int donationId) {
-        try {
-            List<Catalogo> items = getAllCatalogItems();
-            return items.stream()
-                    .anyMatch(item -> item.getDonacionId() == donationId);
-        } catch (Exception e) {
-            System.err.println("Error verificando existencia de item: " + e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean moveCompletedDonationToCatalog(int donationId) {
-        try {
-            Donation donation = donationDAO.getDonation(donationId);
-            if (donation != null && "completed".equals(donation.getStatus())) {
-                // Verificar si ya existe en el catálogo
-                if (!itemExistsForDonation(donationId)) {
-                    Catalogo catalogo = new Catalogo();
-                    catalogo.setDonacionId(donationId);
-                    catalogo.setTitulo(donation.getDescription());
-                    catalogo.setDescripcion(donation.getDescription());
-                    catalogo.setTipo(donation.getType());
-                    catalogo.setCantidad(donation.getQuantity());
-                    catalogo.setCondicion(donation.getCondition());
-                    catalogo.setUbicacion(donation.getLocation());
-                    catalogo.setDonante(donation.getDonorUsername());
-                    catalogo.setEstado("disponible");
-                    // Puedes setear más campos si es necesario
-
-                    return catalogoDAO.addCatalogoItem(catalogo);
-                }
-            }
-            return false;
-        } catch (Exception e) {
-            System.err.println("Error moviendo donación al catálogo: " + e.getMessage());
-            return false;
-        }
     }
 
     // Reporte operations
@@ -462,8 +525,7 @@ public class DataManager {
         } catch (Exception e) {
             System.err.println("Error obteniendo estadísticas del dashboard: " + e.getMessage());
         }
-        
-        // Estadísticas por defecto si hay error
+
         Map<String, Integer> defaultStats = new HashMap<>();
         defaultStats.put("total_donations", getTotalDonations());
         defaultStats.put("total_donors", getTotalDonors());
@@ -574,13 +636,14 @@ public class DataManager {
         try {
             if (statisticsDAO != null) {
                 Map<String, Long> result = statisticsDAO.getDonationsByType();
-                if (result != null) return result;
+                if (result != null) {
+                    return result;
+                }
             }
         } catch (Exception e) {
             System.err.println("Error obteniendo donaciones por tipo: " + e.getMessage());
         }
-        
-        // Implementación alternativa
+
         Map<String, Long> donationsByType = new HashMap<>();
         try {
             List<Donation> donations = getAllDonations();
@@ -600,13 +663,14 @@ public class DataManager {
         try {
             if (statisticsDAO != null) {
                 Map<String, Long> result = statisticsDAO.getDonationsByRegion();
-                if (result != null) return result;
+                if (result != null) {
+                    return result;
+                }
             }
         } catch (Exception e) {
             System.err.println("Error obteniendo donaciones por ubicación: " + e.getMessage());
         }
-        
-        // Implementación alternativa
+
         Map<String, Long> donationsByLocation = new HashMap<>();
         try {
             List<Donation> donations = getAllDonations();
@@ -838,7 +902,6 @@ public class DataManager {
     // MÉTODOS CORREGIDOS: Implementaciones alternativas para métodos faltantes en DAOs
     public List<Request> getRequestsByEmployeeWithFilters(String employeeUsername, String status, String type, String location) {
         try {
-            // Implementación alternativa usando filtros en memoria
             List<Request> requests = getRequestsByEmployee(employeeUsername);
             return requests.stream()
                     .filter(r -> status == null || status.isEmpty() || status.equals(r.getStatus()))
@@ -853,7 +916,6 @@ public class DataManager {
 
     public List<Donation> getDonationsByFilters(String status, String type, String location) {
         try {
-            // Implementación alternativa usando filtros en memoria
             List<Donation> donations = getAllDonations();
             return donations.stream()
                     .filter(d -> status == null || status.isEmpty() || status.equals(d.getStatus()))
@@ -868,7 +930,6 @@ public class DataManager {
 
     public boolean updateDonationStatusForEmployee(int donationId, String newStatus, String employeeUsername) {
         try {
-            // Primero verificar que la donación pertenece al empleado
             Donation donation = getDonation(donationId);
             if (donation != null && employeeUsername.equals(donation.getEmployeeUsername())) {
                 return updateDonationStatus(donationId, newStatus);
@@ -880,7 +941,6 @@ public class DataManager {
         }
     }
 
-    // MÉTODO CORREGIDO: Implementación alternativa para getRequestsByFilters
     public List<Request> getRequestsByFilters(String status, String type, String location) {
         try {
             List<Request> requests = getAllRequests();

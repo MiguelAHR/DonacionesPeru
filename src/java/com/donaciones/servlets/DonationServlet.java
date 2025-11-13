@@ -210,87 +210,92 @@ public class DonationServlet extends HttpServlet {
     }
 
     private void createDonation(HttpServletRequest request, HttpServletResponse response, String username)
-            throws ServletException, IOException {
+        throws ServletException, IOException {
 
+    try {
+        String donationType = request.getParameter("donationType");
+        String description = request.getParameter("description");
+        String quantityStr = request.getParameter("quantity");
+        String condition = request.getParameter("condition");
+        String location = request.getParameter("location");
+        String address = request.getParameter("address");
+
+        // Validar campos requeridos
+        if (donationType == null || donationType.trim().isEmpty()
+                || description == null || description.trim().isEmpty()
+                || quantityStr == null || quantityStr.trim().isEmpty()
+                || condition == null || condition.trim().isEmpty()
+                || location == null || location.trim().isEmpty()) {
+
+            System.out.println("ERROR: Campos faltantes en la donación");
+            // Redirigir de vuelta al formulario con error
+            request.setAttribute("errorMessage", "Por favor, completa todos los campos requeridos");
+            request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
+            return;
+        }
+
+        int quantity;
         try {
-            String donationType = request.getParameter("donationType");
-            String description = request.getParameter("description");
-            String quantityStr = request.getParameter("quantity");
-            String condition = request.getParameter("condition");
-            String location = request.getParameter("location");
-            String address = request.getParameter("address");
-
-            // Validar campos requeridos
-            if (donationType == null || donationType.trim().isEmpty()
-                    || description == null || description.trim().isEmpty()
-                    || quantityStr == null || quantityStr.trim().isEmpty()
-                    || condition == null || condition.trim().isEmpty()
-                    || location == null || location.trim().isEmpty()) {
-
-                System.out.println("ERROR: Campos faltantes en la donación");
-                // Redirigir de vuelta al formulario con error
-                request.setAttribute("errorMessage", "Por favor, completa todos los campos requeridos");
-                request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
-                return;
+            quantity = Integer.parseInt(quantityStr);
+            if (quantity <= 0) {
+                throw new NumberFormatException();
             }
+        } catch (NumberFormatException e) {
+            System.out.println("ERROR: Cantidad inválida: " + quantityStr);
+            request.setAttribute("errorMessage", "La cantidad debe ser un número válido mayor a 0");
+            request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
+            return;
+        }
 
-            int quantity;
-            try {
-                quantity = Integer.parseInt(quantityStr);
-                if (quantity <= 0) {
-                    throw new NumberFormatException();
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("ERROR: Cantidad inválida: " + quantityStr);
-                request.setAttribute("errorMessage", "La cantidad debe ser un número válido mayor a 0");
-                request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
-                return;
-            }
+        // Crear y guardar donación
+        Donation donation = new Donation();
+        donation.setDonorUsername(username);
+        donation.setType(donationType);
+        donation.setDescription(description);
+        donation.setQuantity(quantity);
+        donation.setCondition(condition);
+        donation.setLocation(location);
+        donation.setStatus("pending");
 
-            // Crear y guardar donación
-            Donation donation = new Donation();
-            donation.setDonorUsername(username);
-            donation.setType(donationType);
-            donation.setDescription(description);
-            donation.setQuantity(quantity);
-            donation.setCondition(condition);
-            donation.setLocation(location);
-            donation.setStatus("pending");
+        if (address != null && !address.trim().isEmpty()) {
+            donation.setAddress(address);
+        }
 
-            if (address != null && !address.trim().isEmpty()) {
-                donation.setAddress(address);
-            }
+        DataManager dm = DataManager.getInstance();
+        boolean success = dm.addDonation(donation);
 
-            DataManager dm = DataManager.getInstance();
-            boolean success = dm.addDonation(donation);
+        if (success) {
+            System.out.println("ÉXITO: Donación guardada para usuario: " + username);
 
-            if (success) {
-                System.out.println("ÉXITO: Donación guardada para usuario: " + username);
+            // Determinar dónde redirigir según el tipo de usuario
+            String userType = (String) request.getSession().getAttribute("userType");
+            String redirectUrl;
 
-                // Determinar dónde redirigir según el tipo de usuario
-                String userType = (String) request.getSession().getAttribute("userType");
-                String redirectUrl;
-
-                if ("usuario".equals(userType)) {
-                    redirectUrl = request.getContextPath() + "/profile?success=donation_created&tab=donations";
-                } else {
-                    redirectUrl = request.getContextPath() + "/donations?action=list&success=donation_created";
-                }
-
-                response.sendRedirect(redirectUrl);
+            if ("usuario".equals(userType)) {
+                redirectUrl = request.getContextPath() + "/profile?success=donation_created&tab=donations";
+            } else if ("donador".equals(userType)) {
+                // CORREGIDO: Donador va a su dashboard específico
+                redirectUrl = request.getContextPath() + "/donador/dashboard?success=donation_created";
             } else {
-                System.out.println("ERROR: No se pudo guardar la donación en la BD");
-                request.setAttribute("errorMessage", "Error al guardar la donación en la base de datos");
-                request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
+                // Para admin, empleado y otros tipos
+                redirectUrl = request.getContextPath() + "/dashboard?success=donation_created";
             }
 
-        } catch (Exception e) {
-            System.out.println("ERROR EXCEPCIÓN en createDonation: " + e.getMessage());
-            e.printStackTrace();
-            request.setAttribute("errorMessage", "Error interno del servidor: " + e.getMessage());
+            System.out.println("DEBUG: Redirigiendo usuario tipo '" + userType + "' a: " + redirectUrl);
+            response.sendRedirect(redirectUrl);
+        } else {
+            System.out.println("ERROR: No se pudo guardar la donación en la BD");
+            request.setAttribute("errorMessage", "Error al guardar la donación en la base de datos");
             request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
         }
+
+    } catch (Exception e) {
+        System.out.println("ERROR EXCEPCIÓN en createDonation: " + e.getMessage());
+        e.printStackTrace();
+        request.setAttribute("errorMessage", "Error interno del servidor: " + e.getMessage());
+        request.getRequestDispatcher("/WEB-INF/views/general/donation_form.jsp").forward(request, response);
     }
+}
 
     private void createRequest(HttpServletRequest request, HttpServletResponse response, String username)
             throws ServletException, IOException {

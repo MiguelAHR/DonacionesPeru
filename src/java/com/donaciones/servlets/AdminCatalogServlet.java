@@ -6,20 +6,22 @@ import com.donaciones.models.User;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-// NOTA: NO USAR @WebServlet - estamos usando web.xml
-public class CatalogServlet extends HttpServlet {
+@WebServlet(name = "AdminCatalogServlet", urlPatterns = {"/adminCatalog"})
+public class AdminCatalogServlet extends HttpServlet {
+
     private DataManager dataManager;
 
     @Override
     public void init() throws ServletException {
         try {
             dataManager = DataManager.getInstance();
-            System.out.println("DEBUG - DataManager inicializado correctamente en CatalogServlet");
+            System.out.println("DEBUG - DataManager inicializado correctamente en AdminCatalogServlet");
         } catch (Exception e) {
             System.err.println("ERROR - No se pudo inicializar DataManager: " + e.getMessage());
             throw new ServletException("Error inicializando DataManager", e);
@@ -27,9 +29,9 @@ public class CatalogServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
@@ -37,87 +39,57 @@ public class CatalogServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
-        String action = request.getParameter("action");
-        if (action == null) action = "view";
-
-        try {
-            switch (action) {
-                case "view":
-                    // Vista normal para usuarios
-                    List<Catalogo> catalogItems = dataManager.getAvailableCatalogItems();
-                    request.setAttribute("catalogItems", catalogItems);
-                    request.getRequestDispatcher("/catalogo/lista.jsp").forward(request, response);
-                    break;
-                    
-                case "viewAll":
-                    // Vista completa para empleados y admin
-                    if (user.isAdmin() || "empleado".equals(user.getUserType())) {
-                        List<Catalogo> allItems = dataManager.getAllCatalogItems();
-                        request.setAttribute("catalogItems", allItems);
-                        request.getRequestDispatcher("/catalogo/listaCompleta.jsp").forward(request, response);
-                    } else {
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                    }
-                    break;
-                    
-                case "adminView":
-                    // Vista de administración solo para admin
-                    if (user.isAdmin()) {
-                        adminViewCatalog(request, response);
-                    } else {
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                    }
-                    break;
-                    
-                case "viewItem":
-                    viewCatalogItem(request, response);
-                    break;
-                    
-                case "edit":
-                    if (user.isAdmin()) {
-                        editCatalogItem(request, response);
-                    } else {
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                    }
-                    break;
-                    
-                case "manageStatus":
-                    if (user.isAdmin()) {
-                        manageItemStatus(request, response);
-                    } else {
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                    }
-                    break;
-                    
-                default:
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            }
-        } catch (Exception e) {
-            System.err.println("ERROR CatalogServlet - Error en GET: " + e.getMessage());
-            e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?error=server_error");
-        }
-    }
-    
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        User user = (User) session.getAttribute("user");
-        if (!user.isAdmin()) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        if (!"admin".equals(user.getUserType())) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
 
         String action = request.getParameter("action");
         if (action == null) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView");
+            action = "view";
+        }
+
+        try {
+            switch (action) {
+                case "view":
+                    viewCatalog(request, response);
+                    break;
+                case "viewItem":
+                    viewCatalogItem(request, response);
+                    break;
+                case "getItemData":
+                    getItemData(request, response);
+                    break;
+                default:
+                    viewCatalog(request, response);
+                    break;
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR AdminCatalogServlet - Error en GET: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/adminCatalog?error=server_error");
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        User user = (User) session.getAttribute("user");
+        if (!"admin".equals(user.getUserType())) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
+
+        String action = request.getParameter("action");
+        if (action == null) {
+            response.sendRedirect(request.getContextPath() + "/adminCatalog");
             return;
         }
 
@@ -133,23 +105,24 @@ public class CatalogServlet extends HttpServlet {
                     deleteCatalogItem(request, response);
                     break;
                 default:
-                    response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView");
+                    response.sendRedirect(request.getContextPath() + "/adminCatalog");
             }
         } catch (Exception e) {
-            System.err.println("ERROR CatalogServlet - Error en POST: " + e.getMessage());
+            System.out.println("ERROR AdminCatalogServlet - Error en POST: " + e.getMessage());
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=server_error");
+            response.sendRedirect(request.getContextPath() + "/adminCatalog?error=server_error");
         }
     }
-    
-    // ========== MÉTODOS DE ADMINISTRACIÓN ==========
-    
-    private void adminViewCatalog(HttpServletRequest request, HttpServletResponse response)
+
+    // ========== MÉTODOS PRINCIPALES ==========
+
+    private void viewCatalog(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        System.out.println("DEBUG CatalogServlet - Iniciando adminViewCatalog");
+        System.out.println("DEBUG AdminCatalogServlet - Iniciando viewCatalog");
         
         try {
+            // Obtener todos los ítems del catálogo
             List<Catalogo> catalogItems = dataManager.getAllCatalogItems();
             System.out.println("DEBUG - Total de ítems obtenidos: " + (catalogItems != null ? catalogItems.size() : "null"));
             
@@ -157,17 +130,18 @@ public class CatalogServlet extends HttpServlet {
                 catalogItems = new java.util.ArrayList<>();
             }
 
-            // Aplicar filtros
+            // Aplicar filtros si existen
             String statusFilter = request.getParameter("status");
             String typeFilter = request.getParameter("type");
             
-            System.out.println("DEBUG - Filtros: status=" + statusFilter + ", type=" + typeFilter);
+            System.out.println("DEBUG AdminCatalogServlet - Filtros: status=" + statusFilter + ", type=" + typeFilter);
             
             if (statusFilter != null && !statusFilter.isEmpty()) {
                 final String filter = statusFilter;
                 catalogItems = catalogItems.stream()
                         .filter(item -> filter.equals(item.getEstado()))
                         .collect(java.util.stream.Collectors.toList());
+                System.out.println("DEBUG AdminCatalogServlet - Después de filtrar por estado: " + catalogItems.size());
             }
             
             if (typeFilter != null && !typeFilter.isEmpty()) {
@@ -175,17 +149,21 @@ public class CatalogServlet extends HttpServlet {
                 catalogItems = catalogItems.stream()
                         .filter(item -> filter.equals(item.getTipo()))
                         .collect(java.util.stream.Collectors.toList());
+                System.out.println("DEBUG AdminCatalogServlet - Después de filtrar por tipo: " + catalogItems.size());
             }
             
             request.setAttribute("catalogItems", catalogItems);
             request.setAttribute("currentStatus", statusFilter);
             request.setAttribute("currentType", typeFilter);
             
+            System.out.println("DEBUG AdminCatalogServlet - Redirigiendo a JSP con " + catalogItems.size() + " ítems");
+            
             request.getRequestDispatcher("/WEB-INF/views/admin/catalog_management.jsp").forward(request, response);
             
         } catch (Exception e) {
-            System.err.println("ERROR CRÍTICO en adminViewCatalog: " + e.getMessage());
+            System.err.println("ERROR CRÍTICO en viewCatalog: " + e.getMessage());
             e.printStackTrace();
+            // En caso de error, enviar lista vacía
             request.setAttribute("catalogItems", new java.util.ArrayList<Catalogo>());
             request.setAttribute("error", "Error al cargar el catálogo: " + e.getMessage());
             request.getRequestDispatcher("/WEB-INF/views/admin/catalog_management.jsp").forward(request, response);
@@ -197,7 +175,7 @@ public class CatalogServlet extends HttpServlet {
         
         String idStr = request.getParameter("id");
         if (idStr == null) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_id");
+            response.sendRedirect(request.getContextPath() + "/adminCatalog?error=invalid_id");
             return;
         }
 
@@ -206,7 +184,7 @@ public class CatalogServlet extends HttpServlet {
             Catalogo catalogItem = dataManager.getCatalogoItem(id);
             
             if (catalogItem == null) {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=not_found");
+                response.sendRedirect(request.getContextPath() + "/adminCatalog?error=not_found");
                 return;
             }
 
@@ -214,16 +192,16 @@ public class CatalogServlet extends HttpServlet {
             request.getRequestDispatcher("/WEB-INF/views/admin/catalog_item_details.jsp").forward(request, response);
             
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_id");
+            response.sendRedirect(request.getContextPath() + "/adminCatalog?error=invalid_id");
         }
     }
 
-    private void editCatalogItem(HttpServletRequest request, HttpServletResponse response)
+    private void getItemData(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
         String idStr = request.getParameter("id");
         if (idStr == null) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_id");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID requerido");
             return;
         }
 
@@ -232,60 +210,47 @@ public class CatalogServlet extends HttpServlet {
             Catalogo catalogItem = dataManager.getCatalogoItem(id);
             
             if (catalogItem == null) {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=not_found");
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Ítem no encontrado");
                 return;
             }
 
-            request.setAttribute("catalogItem", catalogItem);
-            request.setAttribute("statuses", new String[]{"disponible", "reservado", "entregado", "inactivo"});
-            request.setAttribute("priorities", new int[]{1, 2, 3});
+            // Enviar datos como JSON
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
             
-            request.getRequestDispatcher("/WEB-INF/views/admin/edit_catalog_item.jsp").forward(request, response);
+            String json = String.format(
+                "{\"id\":%d,\"titulo\":\"%s\",\"descripcion\":\"%s\",\"tipo\":\"%s\",\"cantidad\":%d,\"condicion\":\"%s\",\"ubicacion\":\"%s\",\"estado\":\"%s\",\"prioridad\":%d}",
+                catalogItem.getId(),
+                escapeJson(catalogItem.getTitulo()),
+                escapeJson(catalogItem.getDescripcion()),
+                escapeJson(catalogItem.getTipo()),
+                catalogItem.getCantidad(),
+                escapeJson(catalogItem.getCondicion()),
+                escapeJson(catalogItem.getUbicacion()),
+                escapeJson(catalogItem.getEstado()),
+                catalogItem.getPrioridad()
+            );
             
-        } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_id");
-        }
-    }
-
-    private void manageItemStatus(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        
-        String idStr = request.getParameter("id");
-        if (idStr == null) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_id");
-            return;
-        }
-
-        try {
-            int id = Integer.parseInt(idStr);
-            Catalogo catalogItem = dataManager.getCatalogoItem(id);
-            
-            if (catalogItem == null) {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=not_found");
-                return;
-            }
-
-            request.setAttribute("catalogItem", catalogItem);
-            request.setAttribute("statuses", new String[]{"disponible", "reservado", "entregado", "inactivo"});
-            
-            request.getRequestDispatcher("/WEB-INF/views/admin/manage_catalog_status.jsp").forward(request, response);
+            response.getWriter().write(json);
             
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_id");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID inválido");
+        } catch (Exception e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error del servidor");
         }
     }
 
     // ========== MÉTODOS POST ==========
 
     private void updateCatalogItem(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
+            throws IOException, ServletException {
         
         try {
             int itemId = Integer.parseInt(request.getParameter("itemId"));
             Catalogo existingItem = dataManager.getCatalogoItem(itemId);
             
             if (existingItem == null) {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=not_found");
+                response.sendRedirect(request.getContextPath() + "/adminCatalog?error=not_found");
                 return;
             }
 
@@ -306,16 +271,16 @@ public class CatalogServlet extends HttpServlet {
             boolean success = dataManager.updateCatalogoItem(existingItem);
             
             if (success) {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&success=item_updated");
+                response.sendRedirect(request.getContextPath() + "/adminCatalog?success=item_updated");
             } else {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=update_failed");
+                response.sendRedirect(request.getContextPath() + "/adminCatalog?error=update_failed");
             }
 
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_data");
+            response.sendRedirect(request.getContextPath() + "/adminCatalog?error=invalid_data");
         } catch (Exception e) {
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=server_error");
+            response.sendRedirect(request.getContextPath() + "/adminCatalog?error=server_error");
         }
     }
 
@@ -327,40 +292,51 @@ public class CatalogServlet extends HttpServlet {
             String nuevoEstado = request.getParameter("estado");
             
             if (nuevoEstado == null || nuevoEstado.trim().isEmpty()) {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_status");
+                response.sendRedirect(request.getContextPath() + "/adminCatalog?error=invalid_status");
                 return;
             }
 
             boolean success = dataManager.updateCatalogoItemStatus(itemId, nuevoEstado);
             
             if (success) {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&success=status_updated");
+                response.sendRedirect(request.getContextPath() + "/adminCatalog?success=status_updated");
             } else {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=status_update_failed");
+                response.sendRedirect(request.getContextPath() + "/adminCatalog?error=status_update_failed");
             }
             
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_id");
+            response.sendRedirect(request.getContextPath() + "/adminCatalog?error=invalid_id");
         }
     }
 
+    // MÉTODO CORREGIDO - ELIMINACIÓN PERMANENTE
     private void deleteCatalogItem(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         
         try {
             int itemId = Integer.parseInt(request.getParameter("itemId"));
             
-            // Marcar como inactivo
-            boolean success = dataManager.updateCatalogoItemStatus(itemId, "inactivo");
+            // ELIMINACIÓN PERMANENTE del ítem
+            boolean success = dataManager.deleteCatalogoItem(itemId);
             
             if (success) {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&success=item_deleted");
+                response.sendRedirect(request.getContextPath() + "/adminCatalog?success=item_deleted");
             } else {
-                response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=delete_failed");
+                response.sendRedirect(request.getContextPath() + "/adminCatalog?error=delete_failed");
             }
             
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/adminCatalog?action=adminView&error=invalid_id");
+            response.sendRedirect(request.getContextPath() + "/adminCatalog?error=invalid_id");
         }
+    }
+
+    // Método auxiliar para escapar JSON
+    private String escapeJson(String text) {
+        if (text == null) return "";
+        return text.replace("\\", "\\\\")
+                  .replace("\"", "\\\"")
+                  .replace("\n", "\\n")
+                  .replace("\r", "\\r")
+                  .replace("\t", "\\t");
     }
 }

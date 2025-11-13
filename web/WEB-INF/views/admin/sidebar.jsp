@@ -22,16 +22,18 @@
                href="${pageContext.request.contextPath}/donationManagement">
                 <i class="fas fa-gift me-2"></i>Gestión Donaciones
             </a>
-                <!-- NUEVO: Enlace para Gestión de Solicitudes -->
             <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/requestManagement") ? "active" : ""%>" 
                href="${pageContext.request.contextPath}/requestManagement?action=list">
                 <i class="fas fa-list-alt me-2"></i>Gestión de Solicitudes
+            </a>
+            <a class="nav-link" href="${pageContext.request.contextPath}/adminCatalog">
+                <i class="fas fa-book me-2"></i>Gestión de Catálogo
             </a>
             <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/userManagement") ? "active" : ""%>" 
                href="${pageContext.request.contextPath}/userManagement?action=list">
                 <i class="fas fa-users-cog me-2"></i>Gestión de Usuarios
             </a>
-            
+
             <a class="nav-link <%= request.getServletPath() != null && request.getServletPath().contains("/reports") ? "active" : ""%>" 
                href="${pageContext.request.contextPath}/reports">
                 <i class="fas fa-chart-bar me-2"></i>Reportes

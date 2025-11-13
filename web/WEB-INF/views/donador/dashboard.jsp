@@ -28,6 +28,7 @@
         }
         .nav-pills .nav-link.active {
             background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
         }
         .donation-card {
             border-radius: 15px;
@@ -46,12 +47,17 @@
 <body class="bg-light">
     <!-- Mostrar mensajes -->
     <div class="container mt-3">
-        <% if (request.getParameter("success") != null) { %>
+        <% 
+            String success = request.getParameter("success");
+            String error = request.getParameter("error");
+            String tabParam = request.getParameter("tab");
+            
+            if (success != null) {
+        %>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <i class="fas fa-check-circle me-2"></i>
                 <% 
-                    String successType = request.getParameter("success");
-                    if ("donation_created".equals(successType)) {
+                    if ("donation_created".equals(success)) {
                         out.print("¡Donación creada exitosamente!");
                     } else {
                         out.print("Operación completada exitosamente");
@@ -60,14 +66,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <% } %>
-        <% if (request.getParameter("error") != null) { %>
+        
+        <% if (error != null) { %>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="fas fa-exclamation-circle me-2"></i>
                 <% 
-                    String errorType = request.getParameter("error");
-                    if ("missing_fields".equals(errorType)) {
+                    if ("missing_fields".equals(error)) {
                         out.print("Por favor, completa todos los campos requeridos");
-                    } else if ("invalid_quantity".equals(errorType)) {
+                    } else if ("invalid_quantity".equals(error)) {
                         out.print("La cantidad debe ser un número válido mayor a 0");
                     } else {
                         out.print("Ha ocurrido un error. Intenta nuevamente");
@@ -94,35 +100,46 @@
     <div class="container">
         <div class="card profile-card border-0">
             <div class="card-body p-4">
-                <ul class="nav nav-pills justify-content-center mb-4" id="profileTabs">
-                    <li class="nav-item">
-                        <a class="nav-link active" data-bs-toggle="pill" href="#dashboard">
+                <ul class="nav nav-pills justify-content-center mb-4" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link <%= (tabParam == null || "dashboard".equals(tabParam)) ? "active" : "" %>" 
+                                id="dashboard-tab" data-bs-toggle="pill" data-bs-target="#dashboard" 
+                                type="button" role="tab" aria-controls="dashboard" 
+                                aria-selected="<%= (tabParam == null || "dashboard".equals(tabParam)) ? "true" : "false" %>">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                        </a>
+                        </button>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="pill" href="#donations">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link <%= "donations".equals(tabParam) ? "active" : "" %>" 
+                                id="donations-tab" data-bs-toggle="pill" data-bs-target="#donations" 
+                                type="button" role="tab" aria-controls="donations" 
+                                aria-selected="<%= "donations".equals(tabParam) ? "true" : "false" %>">
                             <i class="fas fa-gift me-2"></i>Mis Donaciones
-                        </a>
+                        </button>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="pill" href="#profile">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link <%= "profile".equals(tabParam) ? "active" : "" %>" 
+                                id="profile-tab" data-bs-toggle="pill" data-bs-target="#profile" 
+                                type="button" role="tab" aria-controls="profile" 
+                                aria-selected="<%= "profile".equals(tabParam) ? "true" : "false" %>">
                             <i class="fas fa-user me-2"></i>Mi Perfil
-                        </a>
+                        </button>
                     </li>
                 </ul>
 
-                <!-- Contenedor -->
-                <div class="tab-content">
+                <!-- Contenido de las pestañas -->
+                <div class="tab-content" id="profileTabsContent">
                     <!-- Dashboard -->
-                    <div class="tab-pane fade show active" id="dashboard">
+                    <div class="tab-pane fade <%= (tabParam == null || "dashboard".equals(tabParam)) ? "show active" : "" %>" 
+                         id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+                        
                         <!-- Estadísticas -->
                         <div class="row mb-4">
                             <div class="col-md-4">
                                 <div class="card text-white bg-success">
                                     <div class="card-body text-center">
                                         <i class="fas fa-gift fa-2x mb-2"></i>
-                                        <h3>${totalDonaciones}</h3>
+                                        <h3><%= request.getAttribute("totalDonations") != null ? request.getAttribute("totalDonations") : "0" %></h3>
                                         <p class="mb-0">Total Donaciones</p>
                                     </div>
                                 </div>
@@ -131,7 +148,7 @@
                                 <div class="card text-white bg-warning">
                                     <div class="card-body text-center">
                                         <i class="fas fa-clock fa-2x mb-2"></i>
-                                        <h3>${donacionesPendientes}</h3>
+                                        <h3><%= request.getAttribute("donacionesPendientes") != null ? request.getAttribute("donacionesPendientes") : "0" %></h3>
                                         <p class="mb-0">Pendientes</p>
                                     </div>
                                 </div>
@@ -140,7 +157,7 @@
                                 <div class="card text-white bg-primary">
                                     <div class="card-body text-center">
                                         <i class="fas fa-check-circle fa-2x mb-2"></i>
-                                        <h3>${donacionesCompletadas}</h3>
+                                        <h3><%= request.getAttribute("donacionesCompletadas") != null ? request.getAttribute("donacionesCompletadas") : "0" %></h3>
                                         <p class="mb-0">Completadas</p>
                                     </div>
                                 </div>
@@ -156,12 +173,14 @@
                                 </h5>
                                 <div class="row g-3">
                                     <div class="col-md-6">
+                                        <!-- CORREGIDO: Enlace a nueva donación -->
                                         <a href="${pageContext.request.contextPath}/donations?action=new" class="btn btn-success btn-lg w-100 py-3">
                                             <i class="fas fa-plus me-2"></i>Nueva Donación
                                         </a>
                                     </div>
                                     <div class="col-md-6">
-                                        <a href="#donations" class="btn btn-outline-success btn-lg w-100 py-3" onclick="switchToTab('donations')">
+                                        <!-- CORREGIDO: Enlace a mis donaciones -->
+                                        <a href="${pageContext.request.contextPath}/donations?action=myDonations" class="btn btn-outline-success btn-lg w-100 py-3">
                                             <i class="fas fa-history me-2"></i>Ver Historial
                                         </a>
                                     </div>
@@ -171,7 +190,8 @@
                     </div>
 
                     <!-- Mis Donaciones -->
-                    <div class="tab-pane fade" id="donations">
+                    <div class="tab-pane fade <%= "donations".equals(tabParam) ? "show active" : "" %>" 
+                         id="donations" role="tabpanel" aria-labelledby="donations-tab">
                         <div class="row">
                             <div class="col-12">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -179,6 +199,7 @@
                                         <i class="fas fa-gift me-2 text-success"></i>
                                         Mis Donaciones Realizadas
                                     </h5>
+                                    <!-- CORREGIDO: Enlace a nueva donación -->
                                     <a href="${pageContext.request.contextPath}/donations?action=new" class="btn btn-success">
                                         <i class="fas fa-plus me-2"></i>Nueva Donación
                                     </a>
@@ -188,7 +209,6 @@
                                 List<Donation> donaciones = (List<Donation>) request.getAttribute("donaciones");
                                 if (donaciones != null && !donaciones.isEmpty()) {
                                     for (Donation donation : donaciones) {
-                                        if (donation != null) {
                                 %>
                                     <div class="card donation-card border-0 shadow-sm mb-3">
                                         <div class="card-body">
@@ -221,7 +241,6 @@
                                         </div>
                                     </div>
                                 <% 
-                                        }
                                     }
                                 } else {
                                 %>
@@ -229,6 +248,7 @@
                                         <i class="fas fa-gift fa-4x text-muted mb-3"></i>
                                         <h5 class="text-muted">No has realizado donaciones aún</h5>
                                         <p class="text-muted">¡Comienza a ayudar a tu comunidad!</p>
+                                        <!-- CORREGIDO: Enlace a nueva donación -->
                                         <a href="${pageContext.request.contextPath}/donations?action=new" class="btn btn-success btn-lg">
                                             <i class="fas fa-plus me-2"></i>Hacer Mi Primera Donación
                                         </a>
@@ -239,7 +259,8 @@
                     </div>
 
                     <!-- Perfil -->
-                    <div class="tab-pane fade" id="profile">
+                    <div class="tab-pane fade <%= "profile".equals(tabParam) ? "show active" : "" %>" 
+                         id="profile" role="tabpanel" aria-labelledby="profile-tab">
                         <div class="row">
                             <div class="col-md-8 mx-auto">
                                 <div class="card border-0 bg-light">
@@ -277,6 +298,7 @@
                                         </div>
 
                                         <div class="text-center mt-4">
+                                            <!-- CORREGIDO: Enlace a nueva donación -->
                                             <a href="${pageContext.request.contextPath}/donations?action=new" class="btn btn-success btn-lg px-4">
                                                 <i class="fas fa-plus me-2"></i>Hacer Nueva Donación
                                             </a>
@@ -300,30 +322,22 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Función para cambiar de pestaña
         function switchToTab(tabName) {
-            const tabLink = document.querySelector(`a[href="#${tabName}"]`);
-            if (tabLink) {
-                const tab = new bootstrap.Tab(tabLink);
+            const tabElement = document.getElementById(tabName + '-tab');
+            if (tabElement) {
+                const tab = new bootstrap.Tab(tabElement);
                 tab.show();
             }
         }
 
-        // Activar pestañas
+        // Activar pestañas según parámetro URL
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DEBUG - Página de donador cargada");
-            
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('tab');
             
-            console.log("DEBUG - tabParam from URL:", tabParam);
-            
             if (tabParam) {
-                const tabLink = document.querySelector(`a[href="#${tabParam}"]`);
-                if (tabLink) {
-                    console.log("DEBUG - Found tab link, activating:", tabParam);
-                    const tab = new bootstrap.Tab(tabLink);
-                    tab.show();
-                }
+                switchToTab(tabParam);
             }
             
             // Auto-ocultar alertas después de 5 segundos

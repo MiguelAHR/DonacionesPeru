@@ -1,8 +1,11 @@
 package com.donaciones.servlets;
 
 import com.donaciones.models.User;
+import com.donaciones.models.Donation;
+import com.donaciones.models.Request;
 import com.donaciones.utils.DataManager;
 import java.io.IOException;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -63,7 +66,18 @@ public class ProfileServlet extends HttpServlet {
                     } catch (Exception e) {
                         System.out.println("ERROR ProfileServlet - Excepción al cargar perfil de usuario: " + e.getMessage());
                         e.printStackTrace();
-                        // En caso de error, redirigir al dashboard
+                        response.sendRedirect(request.getContextPath() + "/dashboard");
+                    }
+                    break;
+                case "donador":
+                    System.out.println("DEBUG ProfileServlet - Cargando perfil de donador");
+                    try {
+                        loadDonorProfileData(request, username, dm);
+                        System.out.println("DEBUG ProfileServlet - Redirigiendo a profile_donador.jsp");
+                        request.getRequestDispatcher("/WEB-INF/views/donador/profile_donador.jsp").forward(request, response);
+                    } catch (Exception e) {
+                        System.out.println("ERROR ProfileServlet - Excepción al cargar perfil de donador: " + e.getMessage());
+                        e.printStackTrace();
                         response.sendRedirect(request.getContextPath() + "/dashboard");
                     }
                     break;
@@ -79,7 +93,7 @@ public class ProfileServlet extends HttpServlet {
         System.out.println("DEBUG ProfileServlet - doGet completado");
     }
 
-// Agregar estos métodos auxiliares al ProfileServlet
+    // Agregar estos métodos auxiliares al ProfileServlet
     private String getSuccessMessage(String successType) {
         switch (successType) {
             case "donation_created":
@@ -133,7 +147,7 @@ public class ProfileServlet extends HttpServlet {
             System.out.println("DEBUG ProfileServlet - Cargando datos para usuario: " + username);
 
             // Cargar donaciones del usuario - con manejo de null
-            java.util.List<com.donaciones.models.Donation> userDonations = dm.getDonationsByUser(username);
+            List<Donation> userDonations = dm.getDonationsByUser(username);
             if (userDonations == null) {
                 userDonations = new java.util.ArrayList<>();
                 System.out.println("DEBUG ProfileServlet - userDonations era null, se inicializó lista vacía");
@@ -150,7 +164,7 @@ public class ProfileServlet extends HttpServlet {
                     .count());
 
             // Cargar solicitudes del usuario también
-            java.util.List<com.donaciones.models.Request> userRequests = dm.getRequestsByUser(username);
+            List<Request> userRequests = dm.getRequestsByUser(username);
             if (userRequests == null) {
                 userRequests = new java.util.ArrayList<>();
                 System.out.println("DEBUG ProfileServlet - userRequests era null, se inicializó lista vacía");
@@ -196,6 +210,74 @@ public class ProfileServlet extends HttpServlet {
             request.setAttribute("userRequests", new java.util.ArrayList<>());
             request.setAttribute("totalUserDonations", 0);
             request.setAttribute("totalUserRequests", 0);
+            request.setAttribute("lastDonation", "Nunca");
+        }
+    }
+
+    // NUEVO MÉTODO: Cargar datos específicos para donadores
+    private void loadDonorProfileData(HttpServletRequest request, String username, DataManager dm) {
+        try {
+            System.out.println("DEBUG ProfileServlet - Cargando datos para donador: " + username);
+
+            // Cargar donaciones del donador
+            List<Donation> donorDonations = dm.getDonationsByUser(username);
+            if (donorDonations == null) {
+                donorDonations = new java.util.ArrayList<>();
+                System.out.println("DEBUG ProfileServlet - donorDonations era null, se inicializó lista vacía");
+            }
+
+            request.setAttribute("donaciones", donorDonations);
+            request.setAttribute("totalDonaciones", donorDonations.size());
+            request.setAttribute("donacionesPendientes", donorDonations.stream()
+                    .filter(d -> d != null && "pending".equals(d.getStatus()))
+                    .count());
+            request.setAttribute("donacionesCompletadas", donorDonations.stream()
+                    .filter(d -> d != null && "completed".equals(d.getStatus()))
+                    .count());
+
+            // Cargar estadísticas adicionales para donadores
+            request.setAttribute("totalDonationsCount", donorDonations.size());
+            request.setAttribute("pendingDonationsCount", donorDonations.stream()
+                    .filter(d -> d != null && "pending".equals(d.getStatus()))
+                    .count());
+            request.setAttribute("activeDonationsCount", donorDonations.stream()
+                    .filter(d -> d != null && "active".equals(d.getStatus()))
+                    .count());
+            request.setAttribute("completedDonationsCount", donorDonations.stream()
+                    .filter(d -> d != null && "completed".equals(d.getStatus()))
+                    .count());
+
+            // Manejar lastDonation de forma segura
+            if (!donorDonations.isEmpty() && donorDonations.get(0) != null) {
+                try {
+                    String lastDonation = new java.text.SimpleDateFormat("dd/MM/yyyy")
+                            .format(donorDonations.get(0).getCreatedDate());
+                    request.setAttribute("lastDonation", lastDonation);
+                } catch (Exception e) {
+                    request.setAttribute("lastDonation", "Nunca");
+                }
+            } else {
+                request.setAttribute("lastDonation", "Nunca");
+            }
+
+            request.setAttribute("memberSince", "2024"); // Puedes obtener esto de la base de datos
+
+            System.out.println("DEBUG ProfileServlet - Datos cargados para donador: "
+                    + donorDonations.size() + " donaciones");
+
+        } catch (Exception e) {
+            System.out.println("ERROR ProfileServlet - Error en loadDonorProfileData: " + e.getMessage());
+            e.printStackTrace();
+
+            // Inicializar con valores por defecto en caso de error
+            request.setAttribute("donaciones", new java.util.ArrayList<>());
+            request.setAttribute("totalDonaciones", 0);
+            request.setAttribute("donacionesPendientes", 0);
+            request.setAttribute("donacionesCompletadas", 0);
+            request.setAttribute("totalDonationsCount", 0);
+            request.setAttribute("pendingDonationsCount", 0);
+            request.setAttribute("activeDonationsCount", 0);
+            request.setAttribute("completedDonationsCount", 0);
             request.setAttribute("lastDonation", "Nunca");
         }
     }

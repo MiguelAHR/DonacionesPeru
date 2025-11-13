@@ -102,17 +102,21 @@
                                         <i class="fas fa-info-circle me-2"></i>Usuarios de Prueba
                                     </h6>
                                     <div class="row text-center">
-                                        <div class="col-4">
+                                        <div class="col-3">
                                             <small class="fw-bold text-danger">Admin</small><br>
                                             <small class="text-muted">admin/admin</small>
                                         </div>
-                                        <div class="col-4">
+                                        <div class="col-3">
                                             <small class="fw-bold text-warning">Empleado</small><br>
                                             <small class="text-muted">emp/emp</small>
                                         </div>
-                                        <div class="col-4">
-                                            <small class="fw-bold text-info">Usuario</small><br>
+                                        <div class="col-3">
+                                            <small class="fw-bold text-success">Receptor</small><br>
                                             <small class="text-muted">user/user</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <small class="fw-bold text-info">Donador</small><br>
+                                            <small class="text-muted">Reyes/arduinouno</small>
                                         </div>
                                     </div>
                                 </div>
