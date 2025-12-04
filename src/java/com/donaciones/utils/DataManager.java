@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.text.SimpleDateFormat;
 
 public class DataManager {
 
@@ -953,5 +954,295 @@ public class DataManager {
             System.err.println("Error obteniendo solicitudes con filtros: " + e.getMessage());
             return new ArrayList<>();
         }
+    }
+    
+    // ========== MÉTODOS NUEVOS PARA CSV PROFESIONAL ==========
+    
+    /**
+     * Método requerido por ExportExcelServlet para obtener lista detallada de donaciones
+     */
+    public List<Map<String, Object>> getDetailedDonationsList() {
+        List<Map<String, Object>> detailedList = new ArrayList<>();
+        
+        try {
+            // Obtener todas las donaciones
+            List<Donation> donations = getAllDonations();
+            
+            // Construir lista detallada
+            for (Donation donation : donations) {
+                Map<String, Object> detail = new HashMap<>();
+                
+                // Información básica
+                detail.put("id", donation.getId());
+                detail.put("tipo", donation.getType() != null ? donation.getType() : "N/A");
+                detail.put("descripcion", donation.getDescription() != null ? donation.getDescription() : "Sin descripción");
+                detail.put("cantidad", donation.getQuantity());
+                detail.put("condicion", donation.getCondition() != null ? donation.getCondition() : "N/A");
+                detail.put("ubicacion", donation.getLocation() != null ? donation.getLocation() : "N/A");
+                detail.put("estado", donation.getStatus() != null ? donation.getStatus() : "N/A");
+                
+                // Fechas
+                if (donation.getCreatedDate() != null) {
+                    detail.put("fecha_creacion", 
+                        new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+                            .format(donation.getCreatedDate()));
+                } else {
+                    detail.put("fecha_creacion", "N/A");
+                }
+                
+                if (donation.getUpdatedDate() != null) {
+                    detail.put("fecha_actualizacion", 
+                        new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+                            .format(donation.getUpdatedDate()));
+                } else {
+                    detail.put("fecha_actualizacion", "N/A");
+                }
+                
+                // Información de personas
+                detail.put("donante_usuario", donation.getDonorUsername() != null ? 
+                    donation.getDonorUsername() : "N/A");
+                detail.put("empleado_usuario", donation.getEmployeeUsername() != null ? 
+                    donation.getEmployeeUsername() : "Sin asignar");
+                
+                // Información adicional
+                detail.put("direccion", donation.getAddress() != null ? donation.getAddress() : "N/A");
+                detail.put("notas", donation.getNotes() != null ? donation.getNotes() : "Sin notas");
+                
+                // Estado visualizado
+                String estado = donation.getStatus();
+                String estadoVisual = "N/A";
+                if ("pending".equalsIgnoreCase(estado)) estadoVisual = "Pendiente";
+                else if ("active".equalsIgnoreCase(estado)) estadoVisual = "Activo";
+                else if ("in_progress".equalsIgnoreCase(estado)) estadoVisual = "En Progreso";
+                else if ("completed".equalsIgnoreCase(estado)) estadoVisual = "Completado";
+                else if ("cancelled".equalsIgnoreCase(estado)) estadoVisual = "Cancelado";
+                detail.put("estado_visual", estadoVisual);
+                
+                // Prioridad (basada en fecha y estado)
+                String prioridad = "Media";
+                if ("pending".equalsIgnoreCase(estado) && donation.getCreatedDate() != null) {
+                    long tiempoPendiente = System.currentTimeMillis() - donation.getCreatedDate().getTime();
+                    long unaSemana = 7L * 24 * 60 * 60 * 1000;
+                    long tresDias = 3L * 24 * 60 * 60 * 1000;
+                    
+                    if (tiempoPendiente > unaSemana) {
+                        prioridad = "Alta";
+                    } else if (tiempoPendiente > tresDias) {
+                        prioridad = "Media";
+                    } else {
+                        prioridad = "Baja";
+                    }
+                }
+                detail.put("prioridad", prioridad);
+                
+                detailedList.add(detail);
+            }
+            
+            // Ordenar por fecha de creación (más recientes primero)
+            detailedList.sort((a, b) -> {
+                try {
+                    String fechaA = (String) a.get("fecha_creacion");
+                    String fechaB = (String) b.get("fecha_creacion");
+                    
+                    if ("N/A".equals(fechaA) || "N/A".equals(fechaB)) {
+                        return 0;
+                    }
+                    
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                    return sdf.parse(fechaB).compareTo(sdf.parse(fechaA));
+                } catch (Exception e) {
+                    return 0;
+                }
+            });
+            
+        } catch (Exception e) {
+            System.err.println("Error obteniendo lista detallada de donaciones: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Crear datos de ejemplo en caso de error
+            Map<String, Object> ejemplo = new HashMap<>();
+            ejemplo.put("id", 1);
+            ejemplo.put("tipo", "Ropa");
+            ejemplo.put("descripcion", "Donación de ropa de invierno");
+            ejemplo.put("cantidad", 15);
+            ejemplo.put("condicion", "Nueva");
+            ejemplo.put("ubicacion", "Centro");
+            ejemplo.put("estado", "completed");
+            ejemplo.put("fecha_creacion", new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date()));
+            ejemplo.put("donante_usuario", "donante_ejemplo");
+            ejemplo.put("empleado_usuario", "empleado_ejemplo");
+            ejemplo.put("estado_visual", "Completado");
+            ejemplo.put("prioridad", "Baja");
+            
+            detailedList.add(ejemplo);
+        }
+        
+        return detailedList;
+    }
+    
+    /**
+     * Versión simplificada para reportes rápidos
+     */
+    public List<Map<String, Object>> getSimpleDonationsList() {
+        List<Map<String, Object>> simpleList = new ArrayList<>();
+        
+        try {
+            List<Donation> donations = getAllDonations();
+            
+            for (Donation donation : donations) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", donation.getId());
+                item.put("tipo", donation.getType() != null ? donation.getType() : "N/A");
+                item.put("descripcion", donation.getDescription() != null ? donation.getDescription().substring(0, Math.min(50, donation.getDescription().length())) + "..." : "");
+                item.put("estado", donation.getStatus() != null ? donation.getStatus() : "N/A");
+                item.put("empleado", donation.getEmployeeUsername() != null ? 
+                    donation.getEmployeeUsername() : "Sin asignar");
+                item.put("fecha", donation.getCreatedDate() != null ? 
+                    new SimpleDateFormat("dd/MM/yyyy").format(donation.getCreatedDate()) : "N/A");
+                item.put("ubicacion", donation.getLocation() != null ? donation.getLocation() : "N/A");
+                item.put("cantidad", donation.getQuantity());
+                
+                simpleList.add(item);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error en lista simple de donaciones: " + e.getMessage());
+        }
+        
+        return simpleList;
+    }
+    
+    /**
+     * Obtiene estadísticas avanzadas para el reporte CSV
+     */
+    public Map<String, Object> getAdvancedEmployeeStats(String employeeUsername) {
+        Map<String, Object> stats = new HashMap<>();
+        
+        try {
+            // Estadísticas básicas
+            stats.put("total_donations", getEmployeeDonations(employeeUsername));
+            stats.put("active_donations", getEmployeeActiveDonations(employeeUsername));
+            stats.put("completed_donations", getEmployeeCompletedDonations(employeeUsername));
+            
+            // Cálculo de porcentajes
+            long total = (Long) stats.get("total_donations");
+            long completed = (Long) stats.get("completed_donations");
+            
+            if (total > 0) {
+                double completionRate = (completed * 100.0) / total;
+                stats.put("completion_rate", String.format("%.1f%%", completionRate));
+                
+                if (completionRate >= 80) {
+                    stats.put("performance", "Excelente");
+                } else if (completionRate >= 60) {
+                    stats.put("performance", "Bueno");
+                } else if (completionRate >= 40) {
+                    stats.put("performance", "Regular");
+                } else {
+                    stats.put("performance", "Necesita mejorar");
+                }
+            } else {
+                stats.put("completion_rate", "0%");
+                stats.put("performance", "Sin actividad");
+            }
+            
+            // Tipos más comunes
+            Map<String, Long> donationsByType = getEmployeeDonationsByType(employeeUsername);
+            if (!donationsByType.isEmpty()) {
+                String mostCommonType = "";
+                long maxCount = 0;
+                for (Map.Entry<String, Long> entry : donationsByType.entrySet()) {
+                    if (entry.getValue() > maxCount) {
+                        maxCount = entry.getValue();
+                        mostCommonType = entry.getKey();
+                    }
+                }
+                stats.put("most_common_type", mostCommonType);
+                stats.put("most_common_count", maxCount);
+            } else {
+                stats.put("most_common_type", "N/A");
+                stats.put("most_common_count", 0);
+            }
+            
+            // Ubicaciones más comunes
+            Map<String, Long> donationsByLocation = getEmployeeDonationsByLocation(employeeUsername);
+            if (!donationsByLocation.isEmpty()) {
+                String mostCommonLocation = "";
+                long maxCount = 0;
+                for (Map.Entry<String, Long> entry : donationsByLocation.entrySet()) {
+                    if (entry.getValue() > maxCount) {
+                        maxCount = entry.getValue();
+                        mostCommonLocation = entry.getKey();
+                    }
+                }
+                stats.put("most_common_location", mostCommonLocation);
+                stats.put("most_common_location_count", maxCount);
+            } else {
+                stats.put("most_common_location", "N/A");
+                stats.put("most_common_location_count", 0);
+            }
+            
+            // Fecha del primer y último registro
+            List<Donation> employeeDonations = donationDAO.getDonationsByEmployee(employeeUsername);
+            if (!employeeDonations.isEmpty()) {
+                java.util.Date firstDate = null;
+                java.util.Date lastDate = null;
+                
+                for (Donation donation : employeeDonations) {
+                    if (donation.getCreatedDate() != null) {
+                        if (firstDate == null || donation.getCreatedDate().before(firstDate)) {
+                            firstDate = donation.getCreatedDate();
+                        }
+                        if (lastDate == null || donation.getCreatedDate().after(lastDate)) {
+                            lastDate = donation.getCreatedDate();
+                        }
+                    }
+                }
+                
+                if (firstDate != null) {
+                    stats.put("first_activity", new SimpleDateFormat("dd/MM/yyyy").format(firstDate));
+                } else {
+                    stats.put("first_activity", "N/A");
+                }
+                
+                if (lastDate != null) {
+                    stats.put("last_activity", new SimpleDateFormat("dd/MM/yyyy").format(lastDate));
+                } else {
+                    stats.put("last_activity", "N/A");
+                }
+            } else {
+                stats.put("first_activity", "N/A");
+                stats.put("last_activity", "N/A");
+            }
+            
+            // Donaciones del último mes
+            long lastMonthCount = 0;
+            long oneMonthAgo = System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000);
+            for (Donation donation : employeeDonations) {
+                if (donation.getCreatedDate() != null && 
+                    donation.getCreatedDate().getTime() > oneMonthAgo) {
+                    lastMonthCount++;
+                }
+            }
+            stats.put("last_month_activity", lastMonthCount);
+            
+        } catch (Exception e) {
+            System.err.println("Error obteniendo estadísticas avanzadas: " + e.getMessage());
+            // Valores por defecto
+            stats.put("total_donations", 0L);
+            stats.put("active_donations", 0L);
+            stats.put("completed_donations", 0L);
+            stats.put("completion_rate", "0%");
+            stats.put("performance", "Sin datos");
+            stats.put("most_common_type", "N/A");
+            stats.put("most_common_count", 0);
+            stats.put("most_common_location", "N/A");
+            stats.put("most_common_location_count", 0);
+            stats.put("first_activity", "N/A");
+            stats.put("last_activity", "N/A");
+            stats.put("last_month_activity", 0);
+        }
+        
+        return stats;
     }
 }

@@ -1,184 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="3.1" xmlns="http://java.sun.com/xml/ns/javaee"
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-         http://java.sun.com/xml/ns/javaee/web-app_3_1.xsd">
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
 
     <display-name>Sistema de Donaciones Peru</display-name>
+    <description>Sistema para gestión de donaciones y reportes</description>
 
     <!-- ======================================================= -->
-    <!-- Filtro de seguridad -->
-    <!-- ======================================================= -->
-    <filter>
-        <filter-name>SecurityFilter</filter-name>
-        <filter-class>com.donaciones.filters.SecurityFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>SecurityFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
-
-    <!-- ======================================================= -->
-    <!-- Servlets Existentes -->
-    <!-- ======================================================= -->
-    <servlet>
-        <servlet-name>ProfileServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.ProfileServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>ReportServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.ReportServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>UserManagementServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.UserManagementServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>DonationManagementServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.DonationManagementServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>LoginServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.LoginServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>DashboardServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.DashboardServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>DonationServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.DonationServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>UserServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.UserServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>LogoutServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.LogoutServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>EmployeeDonationServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.EmployeeDonationServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>RequestManagementServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.RequestManagementServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>UserCRUDServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.UserCRUDServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>AdminCatalogServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.AdminCatalogServlet</servlet-class>
-    </servlet>
-
-    <!-- ======================================================= -->
-    <!-- NUEVO: Servlet para Gestión de Roles y Responsabilidades -->
-    <!-- ======================================================= -->
-    <servlet>
-        <servlet-name>RolesServlet</servlet-name>
-        <servlet-class>com.donaciones.servlets.RolesServlet</servlet-class>
-    </servlet>
-
-    <!-- ======================================================= -->
-    <!-- Mapeos de Servlets -->
-    <!-- ======================================================= -->
-    <servlet-mapping>
-        <servlet-name>ProfileServlet</servlet-name>
-        <url-pattern>/profile</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>ReportServlet</servlet-name>
-        <url-pattern>/reports</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>UserManagementServlet</servlet-name>
-        <url-pattern>/userManagement</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>DonationManagementServlet</servlet-name>
-        <url-pattern>/donationManagement</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>LoginServlet</servlet-name>
-        <url-pattern>/login</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>DashboardServlet</servlet-name>
-        <url-pattern>/dashboard</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>DonationServlet</servlet-name>
-        <url-pattern>/donations</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>UserServlet</servlet-name>
-        <url-pattern>/users</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>LogoutServlet</servlet-name>
-        <url-pattern>/logout</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>EmployeeDonationServlet</servlet-name>
-        <url-pattern>/employeeDonations</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>RequestManagementServlet</servlet-name>
-        <url-pattern>/requestManagement</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>UserCRUDServlet</servlet-name>
-        <url-pattern>/admin/users</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>RolesServlet</servlet-name>
-        <url-pattern>/roles</url-pattern>
-    </servlet-mapping>
-
-    <!-- ======================================================= -->
-    <!-- Welcome Files -->
-    <!-- ======================================================= -->
-    <welcome-file-list>
-        <welcome-file>index.html</welcome-file>
-        <welcome-file>index.jsp</welcome-file>
-        <welcome-file>login.jsp</welcome-file>
-    </welcome-file-list>
-
-    <!-- ======================================================= -->
-    <!-- Session Config -->
-    <!-- ======================================================= -->
-    <session-config>
-        <session-timeout>30</session-timeout>
-    </session-config>
-
-    <!-- ======================================================= -->
-    <!-- Context Params -->
+    <!-- Parámetros de Contexto -->
     <!-- ======================================================= -->
     <context-param>
         <param-name>appName</param-name>
@@ -187,29 +17,36 @@
 
     <context-param>
         <param-name>appVersion</param-name>
-        <param-value>1.0</param-value>
+        <param-value>2.0</param-value>
+    </context-param>
+
+    <context-param>
+        <param-name>csvSeparator</param-name>
+        <param-value>;</param-value>
     </context-param>
 
     <!-- ======================================================= -->
-    <!-- Error Pages -->
+    <!-- Configuración de Sesión -->
     <!-- ======================================================= -->
-    <error-page>
-        <error-code>404</error-code>
-        <location>/WEB-INF/views/general/error.jsp</location>
-    </error-page>
-
-    <error-page>
-        <error-code>500</error-code>
-        <location>/WEB-INF/views/general/error.jsp</location>
-    </error-page>
-
-    <error-page>
-        <error-code>403</error-code>
-        <location>/WEB-INF/views/general/access-denied.jsp</location>
-    </error-page>
+    <session-config>
+        <session-timeout>30</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+            <secure>false</secure>
+        </cookie-config>
+    </session-config>
 
     <!-- ======================================================= -->
-    <!-- MIME Type Mappings -->
+    <!-- Archivos de Bienvenida -->
+    <!-- ======================================================= -->
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
+        <welcome-file>login.jsp</welcome-file>
+    </welcome-file-list>
+
+    <!-- ======================================================= -->
+    <!-- Mapeos de Tipo MIME -->
     <!-- ======================================================= -->
     <mime-mapping>
         <extension>pdf</extension>
@@ -222,13 +59,284 @@
     </mime-mapping>
 
     <mime-mapping>
+        <extension>xls</extension>
+        <mime-type>application/vnd.ms-excel</mime-type>
+    </mime-mapping>
+
+    <mime-mapping>
+        <extension>csv</extension>
+        <mime-type>text/csv; charset=UTF-8</mime-type>
+    </mime-mapping>
+
+    <mime-mapping>
         <extension>docx</extension>
         <mime-type>application/vnd.openxmlformats-officedocument.wordprocessingml.document</mime-type>
     </mime-mapping>
-    
+
+    <mime-mapping>
+        <extension>txt</extension>
+        <mime-type>text/plain; charset=UTF-8</mime-type>
+    </mime-mapping>
+
+    <!-- ======================================================= -->
+    <!-- Filtros -->
+    <!-- ======================================================= -->
+    <!-- Filtro de Seguridad -->
+    <filter>
+        <filter-name>SecurityFilter</filter-name>
+        <filter-class>com.donaciones.filters.SecurityFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>SecurityFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Filtro de Codificación UTF-8 -->
+    <filter>
+        <filter-name>EncodingFilter</filter-name>
+        <filter-class>com.donaciones.filters.EncodingFilter</filter-class>
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>EncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Filtro de Debug (solo para desarrollo) -->
+    <filter>
+        <filter-name>DebugFilter</filter-name>
+        <filter-class>com.donaciones.filters.DebugFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>DebugFilter</filter-name>
+        <url-pattern>/exportExcel</url-pattern>
+        <url-pattern>/exportPdf</url-pattern>
+    </filter-mapping>
+
+    <!-- ======================================================= -->
+    <!-- Servlets de Autenticación y Navegación -->
+    <!-- ======================================================= -->
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.LoginServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>LogoutServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.LogoutServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>DashboardServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.DashboardServlet</servlet-class>
+    </servlet>
+
+    <!-- ======================================================= -->
+    <!-- Servlets de Gestión de Usuarios -->
+    <!-- ======================================================= -->
+    <servlet>
+        <servlet-name>ProfileServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.ProfileServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>UserServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.UserServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>UserManagementServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.UserManagementServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>UserCRUDServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.UserCRUDServlet</servlet-class>
+    </servlet>
+
+    <!-- ======================================================= -->
+    <!-- Servlets de Gestión de Donaciones -->
+    <!-- ======================================================= -->
+    <servlet>
+        <servlet-name>DonationServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.DonationServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>DonationManagementServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.DonationManagementServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>EmployeeDonationServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.EmployeeDonationServlet</servlet-class>
+    </servlet>
+
+    <!-- ======================================================= -->
+    <!-- Servlets de Gestión de Solicitudes -->
+    <!-- ======================================================= -->
+    <servlet>
+        <servlet-name>RequestManagementServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.RequestManagementServlet</servlet-class>
+    </servlet>
+
+    <!-- ======================================================= -->
+    <!-- Servlets de Gestión de Catálogo -->
+    <!-- ======================================================= -->
+    <servlet>
+        <servlet-name>AdminCatalogServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.AdminCatalogServlet</servlet-class>
+    </servlet>
+
+    <!-- ======================================================= -->
+    <!-- Servlets de Gestión de Roles -->
+    <!-- ======================================================= -->
+    <servlet>
+        <servlet-name>RolesServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.RolesServlet</servlet-class>
+    </servlet>
+
+    <!-- ======================================================= -->
+    <!-- Servlets de Reportes -->
+    <!-- ======================================================= -->
+    <servlet>
+        <servlet-name>ReportServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.ReportServlet</servlet-class>
+    </servlet>
+
+    <!-- ======================================================= -->
+    <!-- Servlets de Exportación -->
+    <!-- ======================================================= -->
+    <servlet>
+        <servlet-name>ExportExcelServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.ExportExcelServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>ExportPdfServlet</servlet-name>
+        <servlet-class>com.donaciones.servlets.ExportPdfServlet</servlet-class>
+    </servlet>
+
+    <!-- ======================================================= -->
+    <!-- Mapeos de URLs -->
+    <!-- ======================================================= -->
+    <!-- Autenticación -->
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/login</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>LogoutServlet</servlet-name>
+        <url-pattern>/logout</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>DashboardServlet</servlet-name>
+        <url-pattern>/dashboard</url-pattern>
+    </servlet-mapping>
+
+    <!-- Usuarios -->
+    <servlet-mapping>
+        <servlet-name>ProfileServlet</servlet-name>
+        <url-pattern>/profile</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>UserServlet</servlet-name>
+        <url-pattern>/users</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>UserManagementServlet</servlet-name>
+        <url-pattern>/userManagement</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>UserCRUDServlet</servlet-name>
+        <url-pattern>/admin/users</url-pattern>
+    </servlet-mapping>
+
+    <!-- Donaciones -->
+    <servlet-mapping>
+        <servlet-name>DonationServlet</servlet-name>
+        <url-pattern>/donations</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>DonationManagementServlet</servlet-name>
+        <url-pattern>/donationManagement</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>EmployeeDonationServlet</servlet-name>
+        <url-pattern>/employeeDonations</url-pattern>
+    </servlet-mapping>
+
+    <!-- Solicitudes -->
+    <servlet-mapping>
+        <servlet-name>RequestManagementServlet</servlet-name>
+        <url-pattern>/requestManagement</url-pattern>
+    </servlet-mapping>
+
+    <!-- Catálogo -->
     <servlet-mapping>
         <servlet-name>AdminCatalogServlet</servlet-name>
         <url-pattern>/adminCatalog</url-pattern>
     </servlet-mapping>
+
+    <!-- Roles -->
+    <servlet-mapping>
+        <servlet-name>RolesServlet</servlet-name>
+        <url-pattern>/roles</url-pattern>
+    </servlet-mapping>
+
+    <!-- Reportes -->
+    <servlet-mapping>
+        <servlet-name>ReportServlet</servlet-name>
+        <url-pattern>/reports</url-pattern>
+    </servlet-mapping>
+
+    <!-- Exportación -->
+    <servlet-mapping>
+        <servlet-name>ExportExcelServlet</servlet-name>
+        <url-pattern>/exportExcel</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>ExportPdfServlet</servlet-name>
+        <url-pattern>/exportPdf</url-pattern>
+    </servlet-mapping>
+
+    <!-- ======================================================= -->
+    <!-- Páginas de Error -->
+    <!-- ======================================================= -->
+    <error-page>
+        <error-code>400</error-code>
+        <location>/WEB-INF/views/general/error.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>403</error-code>
+        <location>/WEB-INF/views/general/access-denied.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>404</error-code>
+        <location>/WEB-INF/views/general/not-found.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>500</error-code>
+        <location>/WEB-INF/views/general/server-error.jsp</location>
+    </error-page>
+
+    <error-page>
+        <exception-type>java.lang.Exception</exception-type>
+        <location>/WEB-INF/views/general/error.jsp</location>
+    </error-page>
 
 </web-app>

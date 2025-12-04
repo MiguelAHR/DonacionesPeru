@@ -28,6 +28,7 @@
         }
         .nav-pills .nav-link.active {
             background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
         }
         .request-card {
             border-radius: 15px;
@@ -92,28 +93,28 @@
     <div class="container">
         <div class="card profile-card border-0">
             <div class="card-body p-4">
-                <ul class="nav nav-pills justify-content-center mb-4" id="profileTabs">
-                    <li class="nav-item">
-                        <a class="nav-link active" data-bs-toggle="pill" href="#dashboard">
+                <ul class="nav nav-pills justify-content-center mb-4" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="dashboard-tab" data-bs-toggle="pill" data-bs-target="#dashboard" type="button" role="tab" aria-controls="dashboard" aria-selected="true">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                        </a>
+                        </button>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="pill" href="#requests">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="requests-tab" data-bs-toggle="pill" data-bs-target="#requests" type="button" role="tab" aria-controls="requests" aria-selected="false" tabindex="-1">
                             <i class="fas fa-hand-holding-heart me-2"></i>Mis Solicitudes
-                        </a>
+                        </button>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="pill" href="#profile">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="profile-tab" data-bs-toggle="pill" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false" tabindex="-1">
                             <i class="fas fa-user me-2"></i>Mi Perfil
-                        </a>
+                        </button>
                     </li>
                 </ul>
 
-                <!-- Contenedor -->
-                <div class="tab-content">
+                <!-- Contenido de las pestañas -->
+                <div class="tab-content" id="profileTabsContent">
                     <!-- Dashboard -->
-                    <div class="tab-pane fade show active" id="dashboard">
+                    <div class="tab-pane fade active show" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
                         <!-- Estadísticas -->
                         <div class="row mb-4">
                             <div class="col-md-4">
@@ -159,9 +160,10 @@
                                         </button>
                                     </div>
                                     <div class="col-md-6">
-                                        <a href="#requests" class="btn btn-outline-warning btn-lg w-100 py-3" onclick="switchToTab('requests')">
+                                        <!-- Botón corregido para activar la pestaña "Mis Solicitudes" -->
+                                        <button type="button" class="btn btn-outline-warning btn-lg w-100 py-3" onclick="switchToTab('requests')">
                                             <i class="fas fa-history me-2"></i>Ver Historial
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -169,7 +171,7 @@
                     </div>
 
                     <!-- Mis Solicitudes -->
-                    <div class="tab-pane fade" id="requests">
+                    <div class="tab-pane fade" id="requests" role="tabpanel" aria-labelledby="requests-tab">
                         <div class="row">
                             <div class="col-12">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -246,7 +248,7 @@
                     </div>
 
                     <!-- Perfil -->
-                    <div class="tab-pane fade" id="profile">
+                    <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                         <div class="row">
                             <div class="col-md-8 mx-auto">
                                 <div class="card border-0 bg-light">
@@ -381,30 +383,22 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Función para cambiar de pestaña
         function switchToTab(tabName) {
-            const tabLink = document.querySelector(`a[href="#${tabName}"]`);
-            if (tabLink) {
-                const tab = new bootstrap.Tab(tabLink);
+            const tabElement = document.getElementById(tabName + '-tab');
+            if (tabElement) {
+                const tab = new bootstrap.Tab(tabElement);
                 tab.show();
             }
         }
 
-        // Activar pestañas
+        // Activar pestañas según parámetro URL
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DEBUG - Página de beneficiario cargada");
-            
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('tab');
             
-            console.log("DEBUG - tabParam from URL:", tabParam);
-            
             if (tabParam) {
-                const tabLink = document.querySelector(`a[href="#${tabParam}"]`);
-                if (tabLink) {
-                    console.log("DEBUG - Found tab link, activating:", tabParam);
-                    const tab = new bootstrap.Tab(tabLink);
-                    tab.show();
-                }
+                switchToTab(tabParam);
             }
             
             // Auto-ocultar alertas después de 5 segundos
