@@ -4,6 +4,7 @@ import com.donaciones.models.Donation;
 import com.donaciones.models.User;
 import com.donaciones.utils.DataManager;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -20,35 +21,57 @@ public class DonadorDashboardServlet extends HttpServlet {
             throws ServletException, IOException {
         
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
+        if (session == null || session.getAttribute("username") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
         
-        User user = (User) session.getAttribute("user");
-        if (!"donador".equals(user.getUserType())) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        String username = (String) session.getAttribute("username");
+        DataManager dataManager = DataManager.getInstance();
+        
+        // Obtener el usuario completo
+        User user = dataManager.getUser(username);
+        if (user == null || !"donador".equals(user.getUserType())) {
+            response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
         
-        DataManager dataManager = DataManager.getInstance();
+        // Configurar usuario en sesión y request
+        session.setAttribute("user", user);
+        session.setAttribute("userType", user.getUserType());
         
         // Obtener las donaciones del donador
-        List<Donation> donaciones = dataManager.getDonationsByUser(user.getUsername());
-        request.setAttribute("donaciones", donaciones);
+        List<Donation> donaciones = dataManager.getDonationsByUser(username);
         
-        // Estadísticas del donador
+        // Estadísticas
         int totalDonaciones = donaciones.size();
-        int donacionesPendientes = (int) donaciones.stream()
-                .filter(d -> "pending".equals(d.getStatus()))
-                .count();
-        int donacionesCompletadas = (int) donaciones.stream()
-                .filter(d -> "completed".equals(d.getStatus()))
-                .count();
+        int donacionesPendientes = 0;
+        int donacionesCompletadas = 0;
         
-        request.setAttribute("totalDonaciones", totalDonaciones);
-        request.setAttribute("donacionesPendientes", donacionesPendientes);
-        request.setAttribute("donacionesCompletadas", donacionesCompletadas);
+        for (Donation d : donaciones) {
+            if ("pending".equals(d.getStatus())) {
+                donacionesPendientes++;
+            } else if ("completed".equals(d.getStatus())) {
+                donacionesCompletadas++;
+            }
+        }
+        
+        // Establecer atributos en el request
+        request.setAttribute("donaciones", donaciones);
+        request.setAttribute("totalDonations", totalDonaciones);
+        request.setAttribute("pendingDonations", donacionesPendientes);
+        request.setAttribute("completedDonations", donacionesCompletadas);
+        
+        // Información del perfil
+        request.setAttribute("userFullName", user.getFullName());
+        request.setAttribute("userProfile", user);
+        request.setAttribute("profileImage", user.getProfileImage());
+        
+        // Formatear fecha de registro
+        if (user.getRegistrationDate() != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            request.setAttribute("memberSince", sdf.format(user.getRegistrationDate()));
+        }
         
         request.getRequestDispatcher("/WEB-INF/views/donador/dashboard.jsp").forward(request, response);
     }
