@@ -42,34 +42,77 @@
             padding: 8px 15px;
             border-radius: 20px;
         }
+        .profile-img-container {
+            position: relative;
+            display: inline-block;
+        }
+        .profile-img-container img {
+            border: 4px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .camera-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="bg-light">
-    <!-- Mostrar mensajes -->
+    <!-- Mostrar mensajes de éxito/error para foto de perfil -->
     <div class="container mt-3">
-        <% if (request.getParameter("success") != null) { %>
+        <% 
+            String success = request.getParameter("success");
+            String error = request.getParameter("error");
+            
+            if ("image_uploaded".equals(success)) { 
+        %>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <% 
-                    String successType = request.getParameter("success");
-                    if ("request_created".equals(successType)) {
-                        out.print("¡Solicitud creada exitosamente!");
-                    } else {
-                        out.print("Operación completada exitosamente");
-                    }
-                %>
+                <i class="fas fa-check-circle me-2"></i> ¡Foto de perfil actualizada exitosamente!
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        <% } %>
-        <% if (request.getParameter("error") != null) { %>
+        <% } else if ("image_deleted".equals(success)) { %>
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="fas fa-info-circle me-2"></i> Foto de perfil restaurada a la predeterminada.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } else if ("profile_updated".equals(success)) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i> ¡Perfil actualizado exitosamente!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } else if ("password_updated".equals(success)) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i> ¡Contraseña actualizada exitosamente!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } else if ("request_created".equals(success)) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i> ¡Solicitud creada exitosamente!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } else if (error != null) { %>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
+                <i class="fas fa-exclamation-triangle me-2"></i>
                 <% 
-                    String errorType = request.getParameter("error");
-                    if ("missing_fields".equals(errorType)) {
-                        out.print("Por favor, completa todos los campos requeridos");
-                    } else {
-                        out.print("Ha ocurrido un error. Intenta nuevamente");
+                    switch(error) {
+                        case "missing_fields": out.print("Por favor, completa todos los campos requeridos"); break;
+                        case "no_file": out.print("No se seleccionó ningún archivo."); break;
+                        case "upload_failed": out.print("Error al subir la imagen."); break;
+                        case "db_update_failed": out.print("Error al guardar en la base de datos."); break;
+                        case "file_too_large": out.print("La imagen es demasiado grande. Máximo 2MB."); break;
+                        case "invalid_file_type": out.print("Formato de imagen no permitido. Use JPG, PNG, GIF o WebP."); break;
+                        case "current_password_incorrect": out.print("La contraseña actual es incorrecta."); break;
+                        case "new_password_mismatch": out.print("Las nuevas contraseñas no coinciden."); break;
+                        case "new_password_weak": out.print("La nueva contraseña debe tener al menos 6 caracteres."); break;
+                        case "save_failed": out.print("Error al guardar la información."); break;
+                        default: out.print("Error: " + error.replace("_", " "));
                     }
                 %>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -77,16 +120,36 @@
         <% } %>
     </div>
 
-    <!-- Header -->
+    <!-- Header con foto de perfil -->
     <div class="profile-header">
         <div class="container text-center">
             <div class="mb-3">
-                <div class="bg-white text-warning rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                    <i class="fas fa-hand-holding-heart fa-3x"></i>
+                <!-- Reemplazar el ícono por la foto de perfil -->
+                <div class="profile-img-container">
+                    <img src="${profileImage != null ? profileImage : '/images/receiver-profile.png'}" 
+                         alt="Foto de perfil" 
+                         class="rounded-circle"
+                         style="width: 100px; height: 100px; object-fit: cover;">
+                    
+                    <!-- Botón para cambiar foto -->
+                    <button class="btn btn-light camera-btn" 
+                            onclick="document.getElementById('profileImageInput').click()"
+                            title="Cambiar foto de perfil">
+                        <i class="fas fa-camera text-warning"></i>
+                    </button>
+                    
+                    <!-- Formulario oculto para subir imagen -->
+                    <form id="imageUploadForm" action="${pageContext.request.contextPath}/uploadProfileImage" 
+                          method="post" enctype="multipart/form-data" style="display: none;">
+                        <input type="hidden" name="action" value="upload">
+                        <input type="file" id="profileImageInput" name="profileImage" 
+                               accept="image/*" onchange="uploadProfileImage()">
+                    </form>
                 </div>
             </div>
-            <h2 class="fw-bold">Bienvenido, <%= session.getAttribute("username") != null ? session.getAttribute("username") : "Beneficiario" %></h2>
+            <h2 class="fw-bold">Bienvenido, ${userFullName != null ? userFullName : sessionScope.username}</h2>
             <p class="mb-0">Beneficiario - Sistema de Donaciones Perú</p>
+            <small>Miembro desde: ${memberSince != null ? memberSince : registrationDate != null ? registrationDate : "N/A"}</small>
         </div>
     </div>
 
@@ -121,7 +184,7 @@
                                 <div class="card text-white bg-warning">
                                     <div class="card-body text-center">
                                         <i class="fas fa-hand-holding-heart fa-2x mb-2"></i>
-                                        <h3>${totalSolicitudes}</h3>
+                                        <h3>${totalRequests != null ? totalRequests : totalSolicitudes != null ? totalSolicitudes : 0}</h3>
                                         <p class="mb-0">Total Solicitudes</p>
                                     </div>
                                 </div>
@@ -130,7 +193,7 @@
                                 <div class="card text-white bg-info">
                                     <div class="card-body text-center">
                                         <i class="fas fa-clock fa-2x mb-2"></i>
-                                        <h3>${solicitudesPendientes}</h3>
+                                        <h3>${pendingRequests != null ? pendingRequests : solicitudesPendientes != null ? solicitudesPendientes : 0}</h3>
                                         <p class="mb-0">Pendientes</p>
                                     </div>
                                 </div>
@@ -139,7 +202,7 @@
                                 <div class="card text-white bg-success">
                                     <div class="card-body text-center">
                                         <i class="fas fa-check-circle fa-2x mb-2"></i>
-                                        <h3>${solicitudesAprobadas}</h3>
+                                        <h3>${completedRequests != null ? completedRequests : solicitudesAprobadas != null ? solicitudesAprobadas : 0}</h3>
                                         <p class="mb-0">Aprobadas</p>
                                     </div>
                                 </div>
@@ -255,41 +318,100 @@
                                     <div class="card-body p-4">
                                         <h5 class="fw-bold mb-4">
                                             <i class="fas fa-id-card me-2 text-warning"></i>
-                                            Información del Beneficiario
+                                            Mi Información Personal
                                         </h5>
                                         
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-bold">Usuario</label>
-                                                <div class="form-control bg-white">
-                                                    <%= session.getAttribute("username") != null ? session.getAttribute("username") : "N/A" %>
+                                        <!-- Formulario de edición de perfil -->
+                                        <form action="${pageContext.request.contextPath}/profile" method="post">
+                                            <input type="hidden" name="action" value="update_profile">
+                                            
+                                            <div class="row g-3 mb-4">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Nombres</label>
+                                                    <input type="text" class="form-control" name="firstName" 
+                                                           value="${userProfile.firstName != null ? userProfile.firstName : ''}" 
+                                                           placeholder="Ingresa tus nombres">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Apellidos</label>
+                                                    <input type="text" class="form-control" name="lastName" 
+                                                           value="${userProfile.lastName != null ? userProfile.lastName : ''}" 
+                                                           placeholder="Ingresa tus apellidos">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Correo Electrónico</label>
+                                                    <input type="email" class="form-control" name="email" 
+                                                           value="${userProfile.email != null ? userProfile.email : ''}" 
+                                                           placeholder="correo@ejemplo.com">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Teléfono</label>
+                                                    <input type="tel" class="form-control" name="phone" 
+                                                           value="${userProfile.phone != null ? userProfile.phone : ''}" 
+                                                           placeholder="Número de teléfono">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Región</label>
+                                                    <input type="text" class="form-control" name="region" 
+                                                           value="${userProfile.region != null ? userProfile.region : ''}" 
+                                                           placeholder="Región">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Distrito</label>
+                                                    <input type="text" class="form-control" name="district" 
+                                                           value="${userProfile.district != null ? userProfile.district : ''}" 
+                                                           placeholder="Distrito">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-bold">Dirección</label>
+                                                    <input type="text" class="form-control" name="address" 
+                                                           value="${userProfile.address != null ? userProfile.address : ''}" 
+                                                           placeholder="Dirección completa">
                                                 </div>
                                             </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-bold">Tipo de Usuario</label>
-                                                <div class="form-control bg-white">
-                                                    <span class="badge bg-warning">Beneficiario</span>
+                                            
+                                            <div class="text-center">
+                                                <button type="submit" class="btn btn-warning">
+                                                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                                                </button>
+                                            </div>
+                                        </form>
+                                        
+                                        <hr class="my-4">
+                                        
+                                        <!-- Cambio de contraseña -->
+                                        <h6 class="fw-bold mb-3">
+                                            <i class="fas fa-lock me-2 text-warning"></i>
+                                            Seguridad y Contraseña
+                                        </h6>
+                                        
+                                        <form action="${pageContext.request.contextPath}/profile" method="post">
+                                            <input type="hidden" name="action" value="update_password">
+                                            
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <label class="form-label fw-bold">Contraseña Actual</label>
+                                                    <input type="password" class="form-control" name="currentPassword" 
+                                                           placeholder="Ingresa tu contraseña actual" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Nueva Contraseña</label>
+                                                    <input type="password" class="form-control" name="newPassword" 
+                                                           placeholder="Nueva contraseña" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Confirmar Nueva Contraseña</label>
+                                                    <input type="password" class="form-control" name="confirmPassword" 
+                                                           placeholder="Confirmar nueva contraseña" required>
                                                 </div>
                                             </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-bold">Fecha de Registro</label>
-                                                <div class="form-control bg-white">
-                                                    <%= new java.text.SimpleDateFormat("dd/MM/yyyy").format(new java.util.Date()) %>
-                                                </div>
+                                            
+                                            <div class="text-center mt-3">
+                                                <button type="submit" class="btn btn-outline-warning">
+                                                    <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                                                </button>
                                             </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-bold">Estado</label>
-                                                <div class="form-control bg-white">
-                                                    <span class="badge bg-success">Activo</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="text-center mt-4">
-                                            <button class="btn btn-warning btn-lg px-4" data-bs-toggle="modal" data-bs-target="#nuevaSolicitudModal">
-                                                <i class="fas fa-plus me-2"></i>Nueva Solicitud
-                                            </button>
-                                        </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -410,6 +532,46 @@
                 });
             }, 5000);
         });
+
+        // Mostrar vista previa y subir imagen
+        document.getElementById('profileImageInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Validar tamaño (2MB máximo)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('La imagen es demasiado grande. El tamaño máximo es 2MB.');
+                    this.value = '';
+                    return;
+                }
+                
+                // Validar tipo de archivo
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Formato de imagen no permitido. Use JPG, PNG, GIF o WebP.');
+                    this.value = '';
+                    return;
+                }
+                
+                // Mostrar vista previa
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.querySelector('.profile-header img');
+                    if (img) img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+                
+                // Enviar formulario automáticamente
+                uploadProfileImage();
+            }
+        });
+        
+        // Función para subir la imagen
+        function uploadProfileImage() {
+            const form = document.getElementById('imageUploadForm');
+            if (document.getElementById('profileImageInput').value) {
+                form.submit();
+            }
+        }
     </script>
 </body>
 </html>

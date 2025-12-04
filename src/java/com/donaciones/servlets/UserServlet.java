@@ -1,12 +1,10 @@
 package com.donaciones.servlets;
 
-import com.donaciones.models.Donor;
-import com.donaciones.models.Receiver;
+import com.donaciones.models.User;
 import com.donaciones.utils.DataManager;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -30,11 +28,14 @@ public class UserServlet extends HttpServlet {
         if (action == null) action = "list";
         
         switch (action) {
-            case "newDonor":
-                request.getRequestDispatcher("/WEB-INF/views/general/donor_form.jsp").forward(request, response);
+            case "new":
+                showNewUserForm(request, response);
                 break;
-            case "newReceiver":
-                request.getRequestDispatcher("/WEB-INF/views/general/receiver_form.jsp").forward(request, response);
+            case "edit":
+                showEditUserForm(request, response);
+                break;
+            case "view":
+                showUserDetails(request, response);
                 break;
             case "donors":
                 showDonors(request, response);
@@ -64,211 +65,367 @@ public class UserServlet extends HttpServlet {
         if (action == null) action = "create";
         
         switch (action) {
-            case "createDonor":
-                createDonor(request, response);
+            case "create":
+                createUser(request, response);
                 break;
-            case "createReceiver":
-                createReceiver(request, response);
+            case "update":
+                updateUser(request, response);
+                break;
+            case "delete":
+                deleteUser(request, response);
+                break;
+            case "changestatus":
+                changeUserStatus(request, response);
                 break;
             default:
                 response.sendRedirect(request.getContextPath() + "/users?action=list");
         }
     }
     
-    private void createDonor(HttpServletRequest request, HttpServletResponse response)
+    private void showNewUserForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
+        // Check permissions
+        String userType = (String) request.getSession().getAttribute("userType");
+        if (!"admin".equals(userType)) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
+        
+        request.getRequestDispatcher("/WEB-INF/views/admin/user_form.jsp").forward(request, response);
+    }
+    
+    private void showEditUserForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        // Check permissions
+        String userType = (String) request.getSession().getAttribute("userType");
+        if (!"admin".equals(userType)) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
+        
+        String idParam = request.getParameter("id");
+        if (idParam == null) {
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=missing_id");
+            return;
+        }
+        
         try {
-            // Get form parameters
-            String firstName = request.getParameter("firstName");
-            String lastName = request.getParameter("lastName");
-            String email = request.getParameter("email");
-            String phone = request.getParameter("phone");
-            String dni = request.getParameter("dni");
-            String birthDateStr = request.getParameter("birthDate");
-            String region = request.getParameter("region");
-            String district = request.getParameter("district");
-            String address = request.getParameter("address");
-            String[] donationTypes = request.getParameterValues("donationTypes");
-            String comments = request.getParameter("comments");
-            String notifications = request.getParameter("notifications");
-            String terms = request.getParameter("terms");
+            int userId = Integer.parseInt(idParam);
+            User user = DataManager.getInstance().getUser(userId);
             
-            // Validate required fields
-            if (firstName == null || lastName == null || email == null || phone == null || 
-                dni == null || birthDateStr == null || region == null || district == null || 
-                address == null || donationTypes == null || terms == null) {
-                response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=missing");
+            if (user == null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=user_not_found");
                 return;
             }
             
-            // Validate DNI format
-            if (!dni.matches("\\d{8}")) {
-                response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=invalid_dni");
-                return;
-            }
+            request.setAttribute("user", user);
+            request.getRequestDispatcher("/WEB-INF/views/admin/user_form.jsp").forward(request, response);
             
-            // Validate age (18+)
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date birthDate = sdf.parse(birthDateStr);
-            Date today = new Date();
-            long ageInMillis = today.getTime() - birthDate.getTime();
-            long age = ageInMillis / (1000L * 60 * 60 * 24 * 365);
-            
-            if (age < 18) {
-                response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=under_age");
-                return;
-            }
-            
-            // Create donor
-            Donor donor = new Donor();
-            donor.setUsername(dni); 
-            donor.setPassword("donor123"); // Default password
-            donor.setFirstName(firstName);
-            donor.setLastName(lastName);
-            donor.setEmail(email);
-            donor.setPhone(phone);
-            donor.setDni(dni);
-            donor.setRegion(region);
-            donor.setDistrict(district);
-            donor.setAddress(address);
-            donor.setComments(comments);
-            
-            // Handle notifications parameter safely
-            boolean notificationsEnabled = notifications != null && "on".equals(notifications);
-            donor.setNotificationsEnabled(notificationsEnabled);
-            
-            // Parse birth date
-            donor.setBirthDate(birthDate);
-            
-            // Set donation types
-            donor.setDonationTypes(Arrays.asList(donationTypes));
-            
-            // Save donor using your DataManager as is
-            DataManager.getInstance().addDonor(donor);
-            
-            response.sendRedirect(request.getContextPath() + "/users?action=newDonor&success=true");
-            
-        } catch (ParseException e) {
-            response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=date");
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/users?action=newDonor&error=general");
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=invalid_id");
         }
     }
     
-    private void createReceiver(HttpServletRequest request, HttpServletResponse response)
+    private void showUserDetails(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        String idParam = request.getParameter("id");
+        if (idParam == null) {
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=missing_id");
+            return;
+        }
+        
+        try {
+            int userId = Integer.parseInt(idParam);
+            User user = DataManager.getInstance().getUser(userId);
+            
+            if (user == null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=user_not_found");
+                return;
+            }
+            
+            request.setAttribute("user", user);
+            request.getRequestDispatcher("/WEB-INF/views/admin/user_details.jsp").forward(request, response);
+            
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=invalid_id");
+        }
+    }
+    
+    private void createUser(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
         try {
             // Get form parameters
+            String username = request.getParameter("username");
+            String password = request.getParameter("password");
+            String confirmPassword = request.getParameter("confirmPassword");
+            String userType = request.getParameter("userType");
             String firstName = request.getParameter("firstName");
             String lastName = request.getParameter("lastName");
             String email = request.getParameter("email");
             String phone = request.getParameter("phone");
             String dni = request.getParameter("dni");
             String birthDateStr = request.getParameter("birthDate");
-            String familySizeStr = request.getParameter("familySize");
-            String childrenStr = request.getParameter("children");
-            String economicSituation = request.getParameter("economicSituation");
             String region = request.getParameter("region");
             String district = request.getParameter("district");
             String address = request.getParameter("address");
-            String needs = request.getParameter("needs");
-            String needsDescription = request.getParameter("needsDescription");
-            String dataConsent = request.getParameter("dataConsent");
             String notifications = request.getParameter("notifications");
-            String terms = request.getParameter("terms");
+            String active = request.getParameter("active");
             
             // Validate required fields
-            if (firstName == null || lastName == null || email == null || phone == null || 
-                dni == null || birthDateStr == null || familySizeStr == null || 
-                economicSituation == null || region == null || district == null || 
-                address == null || needs == null || needsDescription == null || 
-                dataConsent == null || terms == null) {
-                response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=missing");
+            if (username == null || password == null || userType == null || 
+                email == null || dni == null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=new&error=missing_fields");
+                return;
+            }
+            
+            // Validate password match
+            if (!password.equals(confirmPassword)) {
+                response.sendRedirect(request.getContextPath() + "/users?action=new&error=password_mismatch");
                 return;
             }
             
             // Validate DNI format
             if (!dni.matches("\\d{8}")) {
-                response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=invalid_dni");
+                response.sendRedirect(request.getContextPath() + "/users?action=new&error=invalid_dni");
                 return;
             }
             
-            // Validate age (18+)
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date birthDate = sdf.parse(birthDateStr);
-            Date today = new Date();
-            long ageInMillis = today.getTime() - birthDate.getTime();
-            long age = ageInMillis / (1000L * 60 * 60 * 24 * 365);
-            
-            if (age < 18) {
-                response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=under_age");
+            // Check if username already exists
+            if (DataManager.getInstance().getUser(username) != null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=new&error=username_exists");
                 return;
             }
             
-            // Create receiver
-            Receiver receiver = new Receiver();
-            receiver.setUsername(dni);
-            receiver.setPassword("receiver123");
-            receiver.setFirstName(firstName);
-            receiver.setLastName(lastName);
-            receiver.setEmail(email);
-            receiver.setPhone(phone);
-            receiver.setDni(dni);
-            receiver.setRegion(region);
-            receiver.setDistrict(district);
-            receiver.setAddress(address);
-            receiver.setEconomicSituation(economicSituation);
-            receiver.setNeedsDescription(needsDescription);
+            // Create user
+            User user = new User();
+            user.setUsername(username);
+            user.setPassword(password);
+            user.setUserType(userType);
+            user.setFirstName(firstName != null ? firstName : "");
+            user.setLastName(lastName != null ? lastName : "");
+            user.setEmail(email);
+            user.setPhone(phone != null ? phone : "");
+            user.setDni(dni);
             
-            // Handle boolean parameters safely
-            boolean dataConsentEnabled = dataConsent != null && "on".equals(dataConsent);
-            receiver.setDataConsent(dataConsentEnabled);
+            // Parse birth date if provided
+            if (birthDateStr != null && !birthDateStr.isEmpty()) {
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                    Date birthDate = sdf.parse(birthDateStr);
+                    user.setBirthDate(birthDate);
+                } catch (ParseException e) {
+                    // If date is invalid, set to null
+                    user.setBirthDate(null);
+                }
+            }
             
+            user.setRegion(region != null ? region : "");
+            user.setDistrict(district != null ? district : "");
+            user.setAddress(address != null ? address : "");
+            
+            // Handle boolean parameters
             boolean notificationsEnabled = notifications != null && "on".equals(notifications);
-            receiver.setNotificationsEnabled(notificationsEnabled);
+            user.setNotificationsEnabled(notificationsEnabled);
             
-            // Parse birth date
-            receiver.setBirthDate(birthDate);
+            boolean isActive = active != null && "on".equals(active);
+            user.setActive(isActive);
             
-            // Parse family size
-            if (!familySizeStr.equals("6+")) {
-                receiver.setFamilySize(Integer.parseInt(familySizeStr));
+            // Save user
+            boolean success = DataManager.getInstance().addUser(user);
+            
+            if (success) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&success=created");
             } else {
-                receiver.setFamilySize(6);
+                response.sendRedirect(request.getContextPath() + "/users?action=new&error=create_failed");
             }
             
-            // Parse children count
-            if (childrenStr != null && !childrenStr.isEmpty()) {
-                receiver.setChildren(Integer.parseInt(childrenStr));
-            } else {
-                receiver.setChildren(0);
-            }
-            
-            // Set needs
-            if (needs != null && !needs.isEmpty()) {
-                receiver.setNeeds(Arrays.asList(needs.split(",")));
-            }
-            
-            // Set default values for receiver
-            receiver.setVerified(false);
-            receiver.setVerificationStatus("pending");
-            receiver.setReceivedDonations(0);
-            
-            // Save receiver using your DataManager as is
-            DataManager.getInstance().addReceiver(receiver);
-            
-            response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&success=true");
-            
-        } catch (ParseException e) {
-            response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=date");
-        } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=number");
         } catch (Exception e) {
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/users?action=newReceiver&error=general");
+            response.sendRedirect(request.getContextPath() + "/users?action=new&error=server_error");
+        }
+    }
+    
+    private void updateUser(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        try {
+            String idParam = request.getParameter("id");
+            if (idParam == null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=missing_id");
+                return;
+            }
+            
+            int userId = Integer.parseInt(idParam);
+            User existingUser = DataManager.getInstance().getUser(userId);
+            
+            if (existingUser == null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=user_not_found");
+                return;
+            }
+            
+            // Get form parameters
+            String username = request.getParameter("username");
+            String password = request.getParameter("password");
+            String userType = request.getParameter("userType");
+            String firstName = request.getParameter("firstName");
+            String lastName = request.getParameter("lastName");
+            String email = request.getParameter("email");
+            String phone = request.getParameter("phone");
+            String dni = request.getParameter("dni");
+            String birthDateStr = request.getParameter("birthDate");
+            String region = request.getParameter("region");
+            String district = request.getParameter("district");
+            String address = request.getParameter("address");
+            String notifications = request.getParameter("notifications");
+            String active = request.getParameter("active");
+            
+            // Validate required fields
+            if (username == null || userType == null || email == null || dni == null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=edit&id=" + userId + "&error=missing_fields");
+                return;
+            }
+            
+            // Update user
+            existingUser.setUsername(username);
+            
+            // Only update password if provided
+            if (password != null && !password.trim().isEmpty()) {
+                existingUser.setPassword(password);
+            }
+            
+            existingUser.setUserType(userType);
+            existingUser.setFirstName(firstName != null ? firstName : "");
+            existingUser.setLastName(lastName != null ? lastName : "");
+            existingUser.setEmail(email);
+            existingUser.setPhone(phone != null ? phone : "");
+            existingUser.setDni(dni);
+            
+            // Parse birth date if provided
+            if (birthDateStr != null && !birthDateStr.isEmpty()) {
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                    Date birthDate = sdf.parse(birthDateStr);
+                    existingUser.setBirthDate(birthDate);
+                } catch (ParseException e) {
+                    // If date is invalid, set to null
+                    existingUser.setBirthDate(null);
+                }
+            }
+            
+            existingUser.setRegion(region != null ? region : "");
+            existingUser.setDistrict(district != null ? district : "");
+            existingUser.setAddress(address != null ? address : "");
+            
+            // Handle boolean parameters
+            boolean notificationsEnabled = notifications != null && "on".equals(notifications);
+            existingUser.setNotificationsEnabled(notificationsEnabled);
+            
+            boolean isActive = active != null && "on".equals(active);
+            existingUser.setActive(isActive);
+            
+            // Save user
+            boolean success = DataManager.getInstance().updateUser(existingUser);
+            
+            if (success) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&success=updated");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/users?action=edit&id=" + userId + "&error=update_failed");
+            }
+            
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=invalid_id");
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=server_error");
+        }
+    }
+    
+    private void deleteUser(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        try {
+            String idParam = request.getParameter("id");
+            if (idParam == null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=missing_id");
+                return;
+            }
+            
+            int userId = Integer.parseInt(idParam);
+            
+            // Check if trying to delete own account
+            HttpSession session = request.getSession();
+            User currentUser = DataManager.getInstance().getUser((String) session.getAttribute("username"));
+            
+            if (currentUser != null && currentUser.getId() == userId) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=cannot_delete_self");
+                return;
+            }
+            
+            boolean success = DataManager.getInstance().deleteUser(userId);
+            
+            if (success) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&success=deleted");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=delete_failed");
+            }
+            
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=invalid_id");
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=server_error");
+        }
+    }
+    
+    private void changeUserStatus(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        try {
+            String idParam = request.getParameter("id");
+            String statusParam = request.getParameter("status");
+            
+            if (idParam == null || statusParam == null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=missing_params");
+                return;
+            }
+            
+            int userId = Integer.parseInt(idParam);
+            boolean active = "activate".equals(statusParam);
+            
+            User user = DataManager.getInstance().getUser(userId);
+            if (user == null) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=user_not_found");
+                return;
+            }
+            
+            // Check if trying to deactivate own account
+            HttpSession session = request.getSession();
+            User currentUser = DataManager.getInstance().getUser((String) session.getAttribute("username"));
+            
+            if (currentUser != null && currentUser.getId() == userId && !active) {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=cannot_deactivate_self");
+                return;
+            }
+            
+            user.setActive(active);
+            boolean success = DataManager.getInstance().updateUser(user);
+            
+            if (success) {
+                String successMsg = active ? "activated" : "deactivated";
+                response.sendRedirect(request.getContextPath() + "/users?action=list&success=" + successMsg);
+            } else {
+                response.sendRedirect(request.getContextPath() + "/users?action=list&error=status_change_failed");
+            }
+            
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=invalid_id");
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/users?action=list&error=server_error");
         }
     }
     
@@ -283,10 +440,16 @@ public class UserServlet extends HttpServlet {
         }
         
         try {
-            // Get donors from DataManager
-            java.util.List<Donor> donors = DataManager.getInstance().getAllDonors();
-            request.setAttribute("donors", donors);
-            request.getRequestDispatcher("/WEB-INF/views/admin/donors_list.jsp").forward(request, response);
+            // Get users with type 'donador'
+            java.util.List<User> donors = DataManager.getInstance().getAllUsers().stream()
+                    .filter(user -> "donador".equals(user.getUserType()))
+                    .collect(java.util.stream.Collectors.toList());
+            
+            request.setAttribute("users", donors);
+            request.setAttribute("userTypeFilter", "donador");
+            request.setAttribute("pageTitle", "Donadores");
+            request.getRequestDispatcher("/WEB-INF/views/admin/users_list.jsp").forward(request, response);
+            
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/dashboard?error=loading_donors");
@@ -304,10 +467,16 @@ public class UserServlet extends HttpServlet {
         }
         
         try {
-            // Get receivers from DataManager
-            java.util.List<Receiver> receivers = DataManager.getInstance().getAllReceivers();
-            request.setAttribute("receivers", receivers);
-            request.getRequestDispatcher("/WEB-INF/views/admin/receivers_list.jsp").forward(request, response);
+            // Get users with type 'receptor'
+            java.util.List<User> receivers = DataManager.getInstance().getAllUsers().stream()
+                    .filter(user -> "receptor".equals(user.getUserType()))
+                    .collect(java.util.stream.Collectors.toList());
+            
+            request.setAttribute("users", receivers);
+            request.setAttribute("userTypeFilter", "receptor");
+            request.setAttribute("pageTitle", "Receptores");
+            request.getRequestDispatcher("/WEB-INF/views/admin/users_list.jsp").forward(request, response);
+            
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/dashboard?error=loading_receivers");
@@ -326,12 +495,21 @@ public class UserServlet extends HttpServlet {
         
         try {
             // Get all users from DataManager
-            java.util.List<com.donaciones.models.User> users = DataManager.getInstance().getAllUsers();
+            java.util.List<User> users = DataManager.getInstance().getAllUsers();
             request.setAttribute("users", users);
+            request.setAttribute("pageTitle", "Todos los Usuarios");
             request.getRequestDispatcher("/WEB-INF/views/admin/users_list.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/dashboard?error=loading_users");
         }
+    }
+    
+    // Helper method to get user by ID
+    private User getUser(int userId) {
+        return DataManager.getInstance().getAllUsers().stream()
+                .filter(u -> u.getId() == userId)
+                .findFirst()
+                .orElse(null);
     }
 }

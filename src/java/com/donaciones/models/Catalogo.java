@@ -82,12 +82,22 @@ public class Catalogo {
     }
 
     public String getTagsAsString() {
+        if (tags == null || tags.isEmpty()) {
+            return "";
+        }
         return String.join(",", tags);
     }
 
     public void setTagsFromString(String tagsStr) {
-        if (tagsStr != null && !tagsStr.isEmpty()) {
-            this.tags = List.of(tagsStr.split(","));
+        if (tagsStr != null && !tagsStr.trim().isEmpty()) {
+            this.tags = new ArrayList<>();
+            String[] tagArray = tagsStr.split(",");
+            for (String tag : tagArray) {
+                String trimmedTag = tag.trim();
+                if (!trimmedTag.isEmpty()) {
+                    this.tags.add(trimmedTag);
+                }
+            }
         }
     }
 
@@ -101,6 +111,39 @@ public class Catalogo {
             case "asignado": return "Asignado";
             case "entregado": return "Entregado";
             default: return estado;
+        }
+    }
+
+    // MÉTODOS NUEVOS PARA MANEJO DE IMÁGENES
+    public String getImagenUrl() {
+        if (imagen == null || imagen.trim().isEmpty()) {
+            return getDefaultImageForType(tipo);
+        }
+        return imagen;
+    }
+
+    public boolean hasCustomImage() {
+        return imagen != null && !imagen.trim().isEmpty() && 
+               !imagen.contains("-default.jpg") && !imagen.contains("default-donation.jpg");
+    }
+
+    private String getDefaultImageForType(String type) {
+        if (type == null) {
+            return "/images/default-donation.jpg";
+        }
+        
+        switch (type) {
+            case "ropa":
+            case "ropa_casi_nueva":
+                return "/images/ropa-default.jpg";
+            case "cuadernos":
+                return "/images/cuadernos-default.jpg";
+            case "utiles_escolares":
+                return "/images/utiles-default.jpg";
+            case "material_reciclable":
+                return "/images/reciclable-default.jpg";
+            default:
+                return "/images/default-donation.jpg";
         }
     }
 

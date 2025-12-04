@@ -4,16 +4,12 @@ import com.donaciones.dao.CatalogoDAO;
 import com.donaciones.dao.UserDAO;
 import com.donaciones.dao.DonationDAO;
 import com.donaciones.dao.RequestDAO;
-import com.donaciones.dao.DonorDAO;
-import com.donaciones.dao.ReceiverDAO;
 import com.donaciones.dao.ReporteDAO;
 import com.donaciones.dao.RoleDAO;
 import com.donaciones.dao.StatisticsDAO;
 import com.donaciones.models.User;
 import com.donaciones.models.Donation;
 import com.donaciones.models.Request;
-import com.donaciones.models.Donor;
-import com.donaciones.models.Receiver;
 import com.donaciones.models.Catalogo;
 import com.donaciones.models.Reporte;
 import com.donaciones.models.Role;
@@ -30,8 +26,6 @@ public class DataManager {
     private UserDAO userDAO;
     private DonationDAO donationDAO;
     private RequestDAO requestDAO;
-    private DonorDAO donorDAO;
-    private ReceiverDAO receiverDAO;
     private RoleDAO roleDAO;
     private CatalogoDAO catalogoDAO;
     private ReporteDAO reporteDAO;
@@ -41,8 +35,6 @@ public class DataManager {
         userDAO = new UserDAO();
         donationDAO = new DonationDAO();
         requestDAO = new RequestDAO();
-        donorDAO = new DonorDAO();
-        receiverDAO = new ReceiverDAO();
         roleDAO = new RoleDAO();
         catalogoDAO = new CatalogoDAO();
         reporteDAO = new ReporteDAO();
@@ -56,17 +48,46 @@ public class DataManager {
         return instance;
     }
 
+    // ========== MÉTODOS DE USUARIO ==========
+    public User authenticateUser(String username, String password) {
+        return userDAO.authenticate(username, password);
+    }
+
+    // NUEVO MÉTODO: Obtener usuario por ID
+    public User getUser(int userId) {
+        return userDAO.getUserById(userId);
+    }
+
+    // Método existente: Obtener usuario por username
+    public User getUser(String username) {
+        return userDAO.getUserByUsername(username);
+    }
+
+    public List<User> getAllUsers() {
+        return userDAO.getAllUsers();
+    }
+
+    public boolean addUser(User user) {
+        return userDAO.addUser(user);
+    }
+
+    public boolean updateUser(User user) {
+        return userDAO.updateUser(user);
+    }
+
+    public boolean updateUserProfileImage(int userId, String profileImage) {
+        return userDAO.updateUserProfileImage(userId, profileImage);
+    }
+
+    public boolean deleteUser(int id) {
+        return userDAO.deleteUser(id);
+    }
+
     // ========== MÉTODOS ADICIONALES PARA CATÁLOGO ==========
-    /**
-     * Verifica si un usuario es administrador
-     */
     public boolean isUserAdmin(User user) {
         return user != null && "admin".equals(user.getUserType());
     }
 
-    /**
-     * Obtiene items del catálogo por estado
-     */
     public List<Catalogo> getCatalogItemsByStatus(String estado) {
         try {
             List<Catalogo> allItems = getAllCatalogItems();
@@ -79,9 +100,6 @@ public class DataManager {
         }
     }
 
-    /**
-     * Obtiene items del catálogo por tipo
-     */
     public List<Catalogo> getCatalogItemsByType(String tipo) {
         try {
             List<Catalogo> allItems = getAllCatalogItems();
@@ -94,9 +112,6 @@ public class DataManager {
         }
     }
 
-    /**
-     * Obtiene items del catálogo con filtros combinados
-     */
     public List<Catalogo> getCatalogItemsWithFilters(String estado, String tipo) {
         try {
             List<Catalogo> allItems = getAllCatalogItems();
@@ -190,33 +205,7 @@ public class DataManager {
         }
     }
 
-    // ========== MÉTODOS EXISTENTES (MANTENER TODOS) ==========
-    // User operations
-    public User authenticateUser(String username, String password) {
-        return userDAO.authenticate(username, password);
-    }
-
-    public User getUser(String username) {
-        return userDAO.getUserByUsername(username);
-    }
-
-    public List<User> getAllUsers() {
-        return userDAO.getAllUsers();
-    }
-
-    public boolean addUser(User user) {
-        return userDAO.addUser(user);
-    }
-
-    public boolean updateUser(User user) {
-        return userDAO.updateUser(user);
-    }
-
-    public boolean deleteUser(int id) {
-        return userDAO.deleteUser(id);
-    }
-
-    // Donation operations
+    // ========== MÉTODOS DE DONACIONES ==========
     public boolean addDonation(Donation donation) {
         try {
             System.out.println("🔍 DEBUG DataManager - addDonation INICIADO");
@@ -288,7 +277,7 @@ public class DataManager {
         return donationDAO.deleteDonation(donationId);
     }
 
-    // Request operations
+    // ========== MÉTODOS DE SOLICITUDES ==========
     public boolean addRequest(Request request) {
         return requestDAO.addRequest(request);
     }
@@ -354,109 +343,7 @@ public class DataManager {
         return requestDAO.deleteRequest(requestId);
     }
 
-    // Donor operations
-    public boolean addDonor(Donor donor) {
-        User user = new User();
-        user.setUsername(donor.getUsername());
-        user.setPassword(donor.getPassword());
-        user.setUserType("donador");
-        user.setFirstName(donor.getFirstName());
-        user.setLastName(donor.getLastName());
-        user.setEmail(donor.getEmail());
-        user.setPhone(donor.getPhone());
-        user.setDni(donor.getDni());
-        user.setBirthDate(donor.getBirthDate());
-        user.setRegion(donor.getRegion());
-        user.setDistrict(donor.getDistrict());
-        user.setAddress(donor.getAddress());
-        user.setNotificationsEnabled(donor.isNotificationsEnabled());
-
-        if (userDAO.addUser(user)) {
-            return donorDAO.addDonor(donor);
-        }
-        return false;
-    }
-
-    public List<Donor> getAllDonors() {
-        return donorDAO.getAllDonors();
-    }
-
-    public Donor getDonorByUserId(int userId) {
-        return donorDAO.getDonorByUserId(userId);
-    }
-
-    public Donor getDonorByUsername(String username) {
-        try {
-            return getAllDonors().stream()
-                    .filter(d -> username.equals(d.getUsername()))
-                    .findFirst()
-                    .orElse(null);
-        } catch (Exception e) {
-            System.err.println("Error obteniendo donador por username: " + e.getMessage());
-            return null;
-        }
-    }
-
-    public boolean updateDonor(Donor donor) {
-        return donorDAO.updateDonor(donor);
-    }
-
-    public boolean deleteDonor(int userId) {
-        return donorDAO.deleteDonor(userId);
-    }
-
-    // Receiver operations
-    public boolean addReceiver(Receiver receiver) {
-        User user = new User();
-        user.setUsername(receiver.getUsername());
-        user.setPassword(receiver.getPassword());
-        user.setUserType("receptor");
-        user.setFirstName(receiver.getFirstName());
-        user.setLastName(receiver.getLastName());
-        user.setEmail(receiver.getEmail());
-        user.setPhone(receiver.getPhone());
-        user.setDni(receiver.getDni());
-        user.setBirthDate(receiver.getBirthDate());
-        user.setRegion(receiver.getRegion());
-        user.setDistrict(receiver.getDistrict());
-        user.setAddress(receiver.getAddress());
-        user.setNotificationsEnabled(receiver.isNotificationsEnabled());
-
-        if (userDAO.addUser(user)) {
-            return receiverDAO.addReceiver(receiver);
-        }
-        return false;
-    }
-
-    public List<Receiver> getAllReceivers() {
-        return receiverDAO.getAllReceivers();
-    }
-
-    public Receiver getReceiverByUserId(int userId) {
-        return receiverDAO.getReceiverByUserId(userId);
-    }
-
-    public Receiver getReceiverByUsername(String username) {
-        try {
-            return getAllReceivers().stream()
-                    .filter(r -> username.equals(r.getUsername()))
-                    .findFirst()
-                    .orElse(null);
-        } catch (Exception e) {
-            System.err.println("Error obteniendo receptor por username: " + e.getMessage());
-            return null;
-        }
-    }
-
-    public boolean updateReceiver(Receiver receiver) {
-        return receiverDAO.updateReceiver(receiver);
-    }
-
-    public boolean deleteReceiver(int userId) {
-        return receiverDAO.deleteReceiver(userId);
-    }
-
-    // Role operations
+    // ========== MÉTODOS DE ROLES ==========
     public List<Role> getAllRoles() {
         return roleDAO.getAllRoles();
     }
@@ -481,7 +368,7 @@ public class DataManager {
         return roleDAO.deleteRole(id);
     }
 
-    // Reporte operations
+    // ========== MÉTODOS DE REPORTES ==========
     public List<Reporte> getAllReports() {
         return reporteDAO.getAllReports();
     }
@@ -514,7 +401,7 @@ public class DataManager {
         return reporteDAO.getRecentReports(limit);
     }
 
-    // Statistics methods for dashboard
+    // ========== ESTADÍSTICAS PARA DASHBOARD ==========
     public Map<String, Integer> getDashboardStats() {
         try {
             if (statisticsDAO != null) {
@@ -529,10 +416,12 @@ public class DataManager {
 
         Map<String, Integer> defaultStats = new HashMap<>();
         defaultStats.put("total_donations", getTotalDonations());
+        defaultStats.put("total_users", getTotalUsers());
         defaultStats.put("total_donors", getTotalDonors());
         defaultStats.put("total_receivers", getTotalReceivers());
         defaultStats.put("pending_donations", getTotalPendingDonations());
         defaultStats.put("pending_requests", getPendingRequestsCount());
+        defaultStats.put("available_catalog_items", getAvailableCatalogItemsCount());
         return defaultStats;
     }
 
@@ -563,12 +452,10 @@ public class DataManager {
         }
     }
 
+    // Métodos simplificados sin Donor/Receiver
     public int getTotalDonors() {
         try {
-            if (donorDAO != null) {
-                return donorDAO.getAllDonors().size();
-            }
-            return 0;
+            return userDAO.countUsersByType("donador");
         } catch (Exception e) {
             System.err.println("Error obteniendo total de donadores: " + e.getMessage());
             return 0;
@@ -577,10 +464,7 @@ public class DataManager {
 
     public int getTotalReceivers() {
         try {
-            if (receiverDAO != null) {
-                return receiverDAO.getAllReceivers().size();
-            }
-            return 0;
+            return userDAO.countUsersByType("receptor");
         } catch (Exception e) {
             System.err.println("Error obteniendo total de receptores: " + e.getMessage());
             return 0;
@@ -598,10 +482,7 @@ public class DataManager {
 
     public int getTotalAdmins() {
         try {
-            List<User> users = userDAO.getAllUsers();
-            return (int) users.stream()
-                    .filter(user -> "admin".equalsIgnoreCase(user.getUserType()))
-                    .count();
+            return userDAO.countUsersByType("admin");
         } catch (Exception e) {
             System.err.println("Error obteniendo total de administradores: " + e.getMessage());
             return 0;
@@ -610,10 +491,7 @@ public class DataManager {
 
     public int getTotalEmployees() {
         try {
-            List<User> users = userDAO.getAllUsers();
-            return (int) users.stream()
-                    .filter(user -> "empleado".equalsIgnoreCase(user.getUserType()))
-                    .count();
+            return userDAO.countUsersByType("empleado");
         } catch (Exception e) {
             System.err.println("Error obteniendo total de empleados: " + e.getMessage());
             return 0;
@@ -622,29 +500,15 @@ public class DataManager {
 
     public int getTotalRegularUsers() {
         try {
-            List<User> users = userDAO.getAllUsers();
-            return (int) users.stream()
-                    .filter(user -> "usuario".equalsIgnoreCase(user.getUserType()))
-                    .count();
+            return userDAO.countUsersByType("usuario");
         } catch (Exception e) {
             System.err.println("Error obteniendo total de usuarios regulares: " + e.getMessage());
             return 0;
         }
     }
 
-    // Report methods
+    // ========== REPORTES POR TIPO ==========
     public Map<String, Long> getDonationsByType() {
-        try {
-            if (statisticsDAO != null) {
-                Map<String, Long> result = statisticsDAO.getDonationsByType();
-                if (result != null) {
-                    return result;
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error obteniendo donaciones por tipo: " + e.getMessage());
-        }
-
         Map<String, Long> donationsByType = new HashMap<>();
         try {
             List<Donation> donations = getAllDonations();
@@ -661,17 +525,6 @@ public class DataManager {
     }
 
     public Map<String, Long> getDonationsByLocation() {
-        try {
-            if (statisticsDAO != null) {
-                Map<String, Long> result = statisticsDAO.getDonationsByRegion();
-                if (result != null) {
-                    return result;
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error obteniendo donaciones por ubicación: " + e.getMessage());
-        }
-
         Map<String, Long> donationsByLocation = new HashMap<>();
         try {
             List<Donation> donations = getAllDonations();
@@ -722,7 +575,7 @@ public class DataManager {
         }
     }
 
-    // Employee-specific statistics
+    // ========== ESTADÍSTICAS DE EMPLEADOS ==========
     public long getEmployeeDonations(String employeeUsername) {
         try {
             return donationDAO.getDonationsByEmployee(employeeUsername).size();
@@ -788,7 +641,7 @@ public class DataManager {
         return donationsByLocation;
     }
 
-    // Catalog statistics
+    // ========== ESTADÍSTICAS DE CATÁLOGO ==========
     public int getTotalCatalogItemsCount() {
         try {
             return catalogoDAO.getAllCatalogItems().size();
@@ -831,7 +684,7 @@ public class DataManager {
         }
     }
 
-    // Request statistics
+    // ========== ESTADÍSTICAS DE SOLICITUDES ==========
     public int getTotalRequestsCount() {
         try {
             return requestDAO.getAllRequests().size();
@@ -868,20 +721,16 @@ public class DataManager {
         }
     }
 
-    // Métodos adicionales para compatibilidad
+    // ========== MÉTODOS ADICIONALES ==========
     public int getUsersByType(String userType) {
         try {
-            List<User> users = userDAO.getAllUsers();
-            return (int) users.stream()
-                    .filter(user -> userType.equalsIgnoreCase(user.getUserType()))
-                    .count();
+            return userDAO.countUsersByType(userType);
         } catch (Exception e) {
             System.err.println("Error obteniendo usuarios por tipo: " + e.getMessage());
             return 0;
         }
     }
 
-    // NUEVOS MÉTODOS REQUERIDOS POR LOS SERVLETS
     public List<String> getEmployeeUsernames() {
         try {
             return userDAO.getEmployeeUsernames();
@@ -900,7 +749,7 @@ public class DataManager {
         }
     }
 
-    // MÉTODOS CORREGIDOS: Implementaciones alternativas para métodos faltantes en DAOs
+    // ========== MÉTODOS CON FILTROS ==========
     public List<Request> getRequestsByEmployeeWithFilters(String employeeUsername, String status, String type, String location) {
         try {
             List<Request> requests = getRequestsByEmployee(employeeUsername);
@@ -956,7 +805,7 @@ public class DataManager {
         }
     }
     
-    // ========== MÉTODOS NUEVOS PARA CSV PROFESIONAL ==========
+    // ========== MÉTODOS PARA CSV PROFESIONAL ==========
     
     /**
      * Método requerido por ExportExcelServlet para obtener lista detallada de donaciones

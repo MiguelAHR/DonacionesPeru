@@ -6,7 +6,7 @@ public class User {
     private int id;
     private String username;
     private String password;
-    private String userType; 
+    private String userType; // admin, empleado, donador, receptor, usuario
     private String firstName;
     private String lastName;
     private String email;
@@ -19,12 +19,17 @@ public class User {
     private Date registrationDate;
     private boolean active;
     private boolean notificationsEnabled;
+    private Integer rolId;
+    
+    // NUEVO CAMPO PARA IMAGEN DE PERFIL
+    private String profileImage;
 
     // Constructors
     public User() {
         this.registrationDate = new Date();
         this.active = true;
         this.notificationsEnabled = true;
+        this.profileImage = "/images/default-profile.png"; // Imagen por defecto
     }
 
     public User(String username, String password, String userType) {
@@ -38,7 +43,7 @@ public class User {
                 String firstName, String lastName, String email, String phone, 
                 String dni, Date birthDate, String region, String district, 
                 String address, Date registrationDate, boolean active, 
-                boolean notificationsEnabled) {
+                boolean notificationsEnabled, Integer rolId, String profileImage) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -55,6 +60,8 @@ public class User {
         this.registrationDate = registrationDate;
         this.active = active;
         this.notificationsEnabled = notificationsEnabled;
+        this.rolId = rolId;
+        this.profileImage = profileImage != null ? profileImage : "/images/default-profile.png";
     }
 
     // Getters and Setters
@@ -186,12 +193,42 @@ public class User {
         this.notificationsEnabled = notificationsEnabled;
     }
 
+    public Integer getRolId() {
+        return rolId;
+    }
+
+    public void setRolId(Integer rolId) {
+        this.rolId = rolId;
+    }
+    
+    // NUEVOS GETTERS Y SETTERS PARA IMAGEN DE PERFIL
+    public String getProfileImage() { 
+        if (profileImage == null || profileImage.trim().isEmpty()) {
+            return "/images/default-profile.png";
+        }
+        return profileImage; 
+    }
+    
+    public void setProfileImage(String profileImage) { 
+        this.profileImage = profileImage; 
+    }
+    
+    public boolean hasCustomProfileImage() {
+        return profileImage != null && !profileImage.trim().isEmpty() && 
+               !profileImage.equals("/images/default-profile.png");
+    }
+
     // Utility methods
     public String getFullName() {
-        return (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
+        if (firstName == null && lastName == null) return username;
+        if (firstName == null) return lastName;
+        if (lastName == null) return firstName;
+        return firstName + " " + lastName;
     }
 
     public String getFormattedUserType() {
+        if (userType == null) return "Usuario";
+        
         switch (userType.toLowerCase()) {
             case "admin":
                 return "Administrador";
@@ -234,6 +271,7 @@ public class User {
                 ", lastName='" + lastName + '\'' +
                 ", email='" + email + '\'' +
                 ", region='" + region + '\'' +
+                ", profileImage='" + profileImage + '\'' +
                 '}';
     }
 }
